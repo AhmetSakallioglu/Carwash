@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APEX Detail Studio | Austin's Premier Auto Spa</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              cyan: '#06b6d4',
+              neon: '#22d3ee',
+              dark: '#080c14',
+              surface: '#0f172a',
+              card: '#131f37'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <style>
+    .glassmorphism {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glow-effect {
+      box-shadow: 0 0 45px -8px rgba(6, 182, 212, 0.3);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .modal-backdrop {
+      background: rgba(4, 7, 13, 0.88);
+      backdrop-filter: blur(10px);
+    }
+    #scroll-progress {
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+    /* Anti-Spam Honeypot Hidden Style */
+    .hp-field {
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 0;
+      width: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-slate-200 font-sans antialiased selection:bg-brand-cyan selection:text-black overflow-x-hidden">
+
+  <!-- Top Scroll Progress Bar -->
+  <div id="scroll-progress" class="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-cyan via-blue-500 to-brand-neon z-50 pointer-events-none"></div>
+
+  <!-- Background Orbs -->
+  <div id="orb-1" class="fixed top-10 left-1/4 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+  <div id="orb-2" class="fixed bottom-10 right-10 w-[450px] h-[450px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-6xl z-40 rounded-full glassmorphism px-6 py-3.5 flex items-center justify-between border border-slate-800/80 shadow-2xl">
+    <a href="#" class="flex items-center gap-2 group">
+      <i data-lucide="sparkles" class="w-6 h-6 text-brand-neon group-hover:rotate-12 transition duration-300"></i>
+      <span class="font-display font-bold text-xl tracking-wider text-white">APEX<span class="text-brand-cyan">.ATX</span></span>
+    </a>
+    
+    <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+      <a href="#services" class="hover:text-brand-neon transition">Services</a>
+      <a href="#comparison" class="hover:text-brand-neon transition">Results</a>
+      <a href="#pricing" class="hover:text-brand-neon transition">Pricing & Calculator</a>
+      <a href="#locations" class="hover:text-brand-neon transition">Austin Area</a>
+    </div>
+
+    <button id="nav-book-btn" class="bg-gradient-to-r from-brand-cyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-semibold text-xs md:text-sm px-5 py-2.5 rounded-full transition shadow-lg shadow-cyan-500/20 active:scale-95 cursor-pointer">
+      Book in Austin
+    </button>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="relative min-h-screen flex items-center justify-center pt-24 px-6 overflow-hidden">
+    <div class="max-w-5xl mx-auto text-center z-10">
+      <div class="hero-badge inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glassmorphism text-xs font-semibold text-brand-neon mb-6 border border-cyan-500/30">
+        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Mobile & Studio Detailing across Austin, TX
+      </div>
+      
+      <h1 class="hero-title font-display text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-tight">
+        Precision Auto Care for <br class="hidden sm:inline" />
+        <span class="gradient-text">Austin's Finest Vehicles.</span>
+      </h1>
+      
+      <p class="hero-desc text-slate-400 text-base sm:text-lg max-w-2xl mx-auto mb-10">
+        Deep interior extraction, swirl-free paint correction, and certified ceramic coatings. Precision results delivered directly to your doorstep.
+      </p>
+
+      <div class="hero-actions flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#pricing" class="w-full sm:w-auto px-8 py-4 bg-brand-neon text-black font-bold rounded-xl hover:bg-cyan-300 transition duration-200 shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 hover:scale-105 active:scale-95">
+          Calculate Price & Book <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+        <a href="#comparison" class="w-full sm:w-auto px-8 py-4 glassmorphism text-white font-semibold rounded-xl hover:bg-slate-800/80 transition duration-200 border border-slate-700/60 hover:scale-105 active:scale-95">
+          View Transformation
+        </a>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="hero-metrics grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mt-16 pt-8 border-t border-slate-800/80">
+        <div>
+          <div class="font-display text-3xl font-bold text-white"><span class="counter" data-target="1400">0</span>+</div>
+          <div class="text-xs text-slate-400 mt-0.5">Vehicles Restored</div>
+        </div>
+        <div>
+          <div class="font-display text-3xl font-bold text-brand-neon"><span class="counter-decimal" data-target="4.9">0.0</span> ★</div>
+          <div class="text-xs text-slate-400 mt-0.5">Google Rating</div>
+        </div>
+        <div>
+          <div class="font-display text-3xl font-bold text-white"><span class="counter" data-target="100">0</span>%</div>
+          <div class="text-xs text-slate-400 mt-0.5">Deionized Pure Water</div>
+        </div>
+        <div>
+          <div class="font-display text-3xl font-bold text-brand-neon"><span class="counter" data-target="5">0</span>-Year</div>
+          <div class="text-xs text-slate-400 mt-0.5">Ceramic Warranty</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Core Services Section -->
+  <section id="services" class="py-28 px-6 scroll-mt-20">
+    <div class="max-w-6xl mx-auto">
+      <div class="services-header text-center max-w-2xl mx-auto mb-16">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-brand-cyan mb-2">Our Capabilities</h2>
+        <p class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Engineered for Automotive Perfection</p>
+        <p class="text-slate-400 text-sm">Choose a package below to customize options in our Austin price builder.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8" id="services-grid">
+        <!-- Service 1 -->
+        <div class="service-card glassmorphism p-8 rounded-2xl border border-slate-800 hover:border-brand-cyan/40 transition duration-300 flex flex-col justify-between hover:-translate-y-2">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-brand-neon flex items-center justify-center mb-6">
+              <i data-lucide="droplets" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-display text-xl font-bold text-white mb-2">Signature Hand Wash</h3>
+            <p class="text-slate-400 text-sm mb-6 leading-relaxed">2-bucket hand wash, wheel barrel decontamination, synthetic paint sealant, and crystal-clear glass.</p>
+            <ul class="space-y-2.5 text-xs text-slate-300 mb-8">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> Foam cannon pre-soak</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> Wheel barrel iron removal</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> 60-day hydrophobic sealant</li>
+            </ul>
+          </div>
+          <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+            <span class="text-lg font-bold text-white font-display">$99 <span class="text-xs text-slate-400 font-normal">base</span></span>
+            <button type="button" data-service-val="99" class="select-pkg-btn px-4 py-2 bg-slate-800 hover:bg-brand-cyan hover:text-black text-xs font-semibold text-white rounded-lg transition cursor-pointer">
+              Select Package
+            </button>
+          </div>
+        </div>
+
+        <!-- Service 2 (Featured) -->
+        <div class="service-card glassmorphism p-8 rounded-2xl border-2 border-brand-cyan/80 relative transition duration-300 flex flex-col justify-between glow-effect hover:-translate-y-2">
+          <span class="absolute -top-3 right-6 bg-brand-cyan text-black text-[10px] font-extrabold uppercase px-3 py-1 rounded-full tracking-wider">Most Popular</span>
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/20 text-brand-neon flex items-center justify-center mb-6">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-display text-xl font-bold text-white mb-2">Full Interior & Exterior Reset</h3>
+            <p class="text-slate-400 text-sm mb-6 leading-relaxed">Steam extraction, leather conditioning, clay bar decontam, and multi-layer high-gloss machine glaze.</p>
+            <ul class="space-y-2.5 text-xs text-slate-300 mb-8">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> Full cabin steam & sanitation</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> Clay bar paint treatment</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> Deep carpet hot water extraction</li>
+            </ul>
+          </div>
+          <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+            <span class="text-lg font-bold text-white font-display">$249 <span class="text-xs text-slate-400 font-normal">base</span></span>
+            <button type="button" data-service-val="249" class="select-pkg-btn px-4 py-2 bg-brand-neon text-black text-xs font-bold rounded-lg hover:bg-cyan-300 transition cursor-pointer">
+              Select Package
+            </button>
+          </div>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="service-card glassmorphism p-8 rounded-2xl border border-slate-800 hover:border-brand-cyan/40 transition duration-300 flex flex-col justify-between hover:-translate-y-2">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-brand-neon flex items-center justify-center mb-6">
+              <i data-lucide="gem" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-display text-xl font-bold text-white mb-2">Ceramic Coating & Correction</h3>
+            <p class="text-slate-400 text-sm mb-6 leading-relaxed">Multi-stage machine paint correction eliminating swirls, topped with certified 3 to 5-year 9H ceramic matrix.</p>
+            <ul class="space-y-2.5 text-xs text-slate-300 mb-8">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> 2-Stage swirl elimination</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> 9H Ceramic layer application</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-cyan"></i> Carfax registration warranty</li>
+            </ul>
+          </div>
+          <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+            <span class="text-lg font-bold text-white font-display">$799 <span class="text-xs text-slate-400 font-normal">base</span></span>
+            <button type="button" data-service-val="799" class="select-pkg-btn px-4 py-2 bg-slate-800 hover:bg-brand-cyan hover:text-black text-xs font-semibold text-white rounded-lg transition cursor-pointer">
+              Select Package
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Before / After Slider -->
+  <section id="comparison" class="py-28 px-6 bg-slate-950/60 scroll-mt-20 overflow-hidden">
+    <div class="max-w-5xl mx-auto">
+      <div class="comparison-header text-center mb-12">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-brand-cyan mb-2">Unmatched Craftsmanship</h2>
+        <p class="font-display text-3xl sm:text-4xl font-bold text-white">See the Transformation</p>
+      </div>
+
+      <div class="comparison-box relative w-full max-w-4xl mx-auto h-72 sm:h-96 md:h-[480px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800 select-none" id="slider-container">
+        <!-- Before View -->
+        <div class="absolute inset-0 bg-slate-900 flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1400&q=80')] bg-cover bg-center">
+          <div class="absolute inset-0 bg-black/40"></div>
+          <span class="absolute bottom-6 left-6 z-10 text-xs font-bold tracking-wider px-3 py-1.5 rounded-md bg-black/70 backdrop-blur text-slate-300 border border-white/10">BEFORE (Swirl Marks & Road Film)</span>
+        </div>
+
+        <!-- After View -->
+        <div id="after-image" class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80')] bg-cover bg-center" style="clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);">
+          <span class="absolute bottom-6 right-6 z-10 text-xs font-bold tracking-wider px-3 py-1.5 rounded-md bg-brand-cyan/90 text-black">AFTER (Multi-Stage Polish & Coating)</span>
+        </div>
+
+        <!-- Handle -->
+        <div id="slider-handle" class="absolute top-0 bottom-0 w-1 bg-brand-cyan cursor-ew-resize z-20" style="left: 50%;">
+          <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-brand-cyan text-black flex items-center justify-center shadow-2xl border-2 border-white transition-transform active:scale-110">
+            <i data-lucide="chevrons-left-right" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </div>
+      <p class="text-center text-xs text-slate-500 mt-4">Drag the slider horizontally to compare before and after results.</p>
+    </div>
+  </section>
+
+  <!-- Pricing Calculator Section -->
+  <section id="pricing" class="py-28 px-6 bg-slate-950/80 border-y border-slate-800/80 scroll-mt-20">
+    <div class="max-w-4xl mx-auto">
+      <div class="pricing-header text-center mb-12">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-brand-cyan mb-2">Instant Estimate</h2>
+        <p class="font-display text-3xl sm:text-4xl font-bold text-white">Custom Package Builder</p>
+        <p class="text-slate-400 text-sm mt-2">Select your vehicle type and preferences for a transparent quote.</p>
+      </div>
+
+      <div id="calculator-box" class="pricing-card glassmorphism p-8 sm:p-10 rounded-3xl border border-slate-800 grid md:grid-cols-5 gap-8 items-center transition-all duration-300">
+        <!-- Configuration Controls -->
+        <div class="md:col-span-3 space-y-6">
+          <!-- 1: Vehicle Size -->
+          <div>
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">1. Vehicle Category</label>
+            <div class="grid grid-cols-3 gap-3" id="vehicle-types">
+              <button type="button" data-multiplier="1.0" data-label="Sedan / Coupe" class="vehicle-btn active px-3 py-3 rounded-xl border border-brand-cyan bg-cyan-500/10 text-white text-xs font-bold text-center transition cursor-pointer">
+                Sedan / Coupe
+              </button>
+              <button type="button" data-multiplier="1.2" data-label="Mid-SUV / Crossover" class="vehicle-btn px-3 py-3 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 text-xs font-bold text-center hover:border-slate-500 transition cursor-pointer">
+                Mid-SUV / Crossover
+              </button>
+              <button type="button" data-multiplier="1.4" data-label="Truck / 3-Row SUV" class="vehicle-btn px-3 py-3 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 text-xs font-bold text-center hover:border-slate-500 transition cursor-pointer">
+                Truck / 3-Row SUV
+              </button>
+            </div>
+          </div>
+
+          <!-- 2: Base Package -->
+          <div>
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">2. Core Service</label>
+            <select id="package-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer">
+              <option value="99">Exterior Signature Hand Wash ($99)</option>
+              <option value="159">Interior Deep Steam Restoration ($159)</option>
+              <option value="249" selected>Full Complete Reset (In & Out) ($249)</option>
+              <option value="799">Ceramic Coating & Paint Correction ($799)</option>
+            </select>
+          </div>
+
+          <!-- 3: Add-ons -->
+          <div>
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">3. High-Value Add-Ons</label>
+            <div class="space-y-2">
+              <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                <span class="text-xs text-slate-300 flex items-center gap-2">
+                  <input type="checkbox" value="50" class="addon-checkbox rounded border-slate-700 text-brand-cyan focus:ring-0">
+                  Pet Hair & Odor Neutralizer
+                </span>
+                <span class="text-xs font-bold text-brand-neon">+$50</span>
+              </label>
+              <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                <span class="text-xs text-slate-300 flex items-center gap-2">
+                  <input type="checkbox" value="75" class="addon-checkbox rounded border-slate-700 text-brand-cyan focus:ring-0">
+                  Engine Bay Detail & Dressing
+                </span>
+                <span class="text-xs font-bold text-brand-neon">+$75</span>
+              </label>
+              <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                <span class="text-xs text-slate-300 flex items-center gap-2">
+                  <input type="checkbox" value="90" class="addon-checkbox rounded border-slate-700 text-brand-cyan focus:ring-0">
+                  UV Headlight Restoration
+                </span>
+                <span class="text-xs font-bold text-brand-neon">+$90</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary & Reserve CTA -->
+        <div class="md:col-span-2 bg-gradient-to-b from-slate-900 to-brand-card p-6 rounded-2xl border border-cyan-500/20 text-center flex flex-col justify-between h-full shadow-lg">
+          <div>
+            <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Estimated Total</span>
+            <div class="my-4">
+              <span class="text-4xl sm:text-5xl font-extrabold font-display text-white" id="total-price">$249</span>
+              <span class="text-xs text-slate-400 block mt-1">Austin Mobile or Studio</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed mb-6">
+              Includes complimentary tire dressing, hydrophobic glass treatment, and multi-point inspection.
+            </p>
+          </div>
+
+          <button id="calc-reserve-btn" type="button" class="w-full py-3.5 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-sm rounded-xl transition shadow-lg shadow-cyan-500/20 block cursor-pointer hover:scale-[1.02] active:scale-95">
+            Reserve This Package
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Austin Service Area Notice -->
+  <section id="locations" class="py-20 px-6 scroll-mt-20">
+    <div class="location-box max-w-5xl mx-auto glassmorphism p-8 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 text-brand-cyan flex items-center justify-center shrink-0 border border-cyan-500/20">
+          <i data-lucide="navigation" class="w-7 h-7"></i>
+        </div>
+        <div>
+          <h3 class="font-display font-bold text-white text-lg">Serving Greater Austin & Travis County</h3>
+          <p class="text-xs text-slate-400 mt-1">Downtown, West Lake Hills, The Domain, Round Rock, Cedar Park, Lakeway & Bee Cave.</p>
+        </div>
+      </div>
+      <div class="text-xs font-bold text-brand-neon px-5 py-3 rounded-full bg-cyan-500/10 border border-cyan-500/30 whitespace-nowrap shadow-lg shadow-cyan-500/10">
+        ✓ 0$ Travel Fee within 25 Miles
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Booking Modal with Anti-Spam Protections -->
+  <div id="booking-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden transition-opacity duration-300">
+    <div id="modal-container" class="relative w-full max-w-lg glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[92vh]">
+      
+      <!-- Close Button -->
+      <button id="modal-close-btn" type="button" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-800/80 cursor-pointer">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Booking Form View -->
+      <div id="modal-form-view">
+        <div class="mb-5">
+          <div class="inline-flex items-center gap-1.5 text-brand-cyan text-xs font-bold uppercase tracking-wider mb-1">
+            <i data-lucide="calendar" class="w-4 h-4"></i> Austin Auto Spa Scheduling
+          </div>
+          <h3 class="font-display text-2xl font-bold text-white">Confirm Appointment</h3>
+          <p class="text-xs text-slate-400 mt-1">No upfront payment required. Pay after service inspection.</p>
+        </div>
+
+        <!-- Selected Summary Box -->
+        <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-3.5 mb-5 flex justify-between items-center text-xs">
+          <div>
+            <span class="text-slate-400">Configured Service:</span>
+            <span id="modal-summary-package" class="font-bold text-white block">Full Complete Reset</span>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400">Total Price:</span>
+            <span id="modal-summary-price" class="font-bold text-brand-neon block text-sm">$249</span>
+          </div>
+        </div>
+
+        <!-- Error Notification Banner -->
+        <div id="form-error" class="hidden mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs"></div>
+
+        <form id="booking-form" class="space-y-3.5 text-xs">
+          
+          <!-- Anti-Spam Honeypot Field (Invisible to real humans) -->
+          <input type="text" id="hp_website_url" name="website_trap" class="hp-field" tabindex="-1" autocomplete="off">
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-300 mb-1">Full Name *</label>
+              <input type="text" id="cust-name" required placeholder="John Doe" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-300 mb-1">Phone Number *</label>
+              <input type="tel" id="cust-phone" required placeholder="(512) 000-0000" maxlength="14" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-300 mb-1">Preferred Date *</label>
+              <input type="date" id="cust-date" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-300 mb-1">Time Slot *</label>
+              <select id="cust-time" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan">
+                <option value="09:00 AM">09:00 AM (Morning)</option>
+                <option value="01:00 PM">01:00 PM (Afternoon)</option>
+                <option value="04:30 PM">04:30 PM (Evening)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Austin Address / Zip Code *</label>
+            <input type="text" id="cust-address" required placeholder="e.g. 11723 N FM 620, Austin, TX 78726" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Vehicle Make / Model / Year *</label>
+            <input type="text" id="cust-vehicle" required placeholder="e.g. 2024 Tesla Model Y / 2021 BMW M3" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan">
+          </div>
+
+          <button type="submit" id="submit-btn" class="w-full mt-2 py-3.5 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-sm rounded-xl transition shadow-lg shadow-cyan-500/20 cursor-pointer flex items-center justify-center gap-2">
+            <span>Confirm Austin Reservation</span>
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Booking Confirmation Success View -->
+      <div id="modal-success-view" class="hidden text-center py-8">
+        <div class="w-16 h-16 bg-cyan-500/20 text-brand-neon rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-cyan/40">
+          <i data-lucide="check-check" class="w-8 h-8"></i>
+        </div>
+        <h3 class="font-display text-2xl font-bold text-white mb-2">Reservation Confirmed!</h3>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto mb-6 leading-relaxed">
+          We received your request. Our team will send an SMS confirmation to <span id="success-phone" class="text-brand-neon font-semibold"></span> shortly.
+        </p>
+        <button id="success-done-btn" type="button" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold cursor-pointer">
+          Done
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="py-12 px-6 border-t border-slate-900 text-center text-xs text-slate-600">
+    <p>© 2026 APEX Detail Studio Austin. All rights reserved.</p>
+  </footer>
+
+  <!-- Master JavaScript Engine -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+
+      // GSAP Animations
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Scroll Progress Bar
+      gsap.to("#scroll-progress", {
+        scaleX: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: document.body,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 0.3
+        }
+      });
+
+      // Parallax Orbs
+      gsap.to("#orb-1", {
+        y: 250,
+        scrollTrigger: { trigger: "body", start: "top top", end: "bottom bottom", scrub: 1.5 }
+      });
+      gsap.to("#orb-2", {
+        y: -250,
+        scrollTrigger: { trigger: "body", start: "top top", end: "bottom bottom", scrub: 2 }
+      });
+
+      // Counters
+      ScrollTrigger.create({
+        trigger: ".hero-metrics",
+        start: "top 85%",
+        once: true,
+        onEnter: () => {
+          document.querySelectorAll(".counter").forEach(counter => {
+            const target = +counter.getAttribute("data-target");
+            gsap.fromTo(counter, { innerHTML: 0 }, {
+              innerHTML: target,
+              duration: 2,
+              ease: "power2.out",
+              snap: { innerHTML: 1 }
+            });
+          });
+          document.querySelectorAll(".counter-decimal").forEach(counter => {
+            const target = parseFloat(counter.getAttribute("data-target"));
+            const obj = { val: 0.0 };
+            gsap.to(obj, {
+              val: target,
+              duration: 2,
+              ease: "power2.out",
+              onUpdate: () => { counter.innerHTML = obj.val.toFixed(1); }
+            });
+          });
+        }
+      });
+
+      // Before/After Slider Logic
+      const sliderContainer = document.getElementById('slider-container');
+      const afterImage = document.getElementById('after-image');
+      const sliderHandle = document.getElementById('slider-handle');
+      let isDragging = false;
+
+      function updateSlider(xPos) {
+        const rect = sliderContainer.getBoundingClientRect();
+        let offsetX = xPos - rect.left;
+        if (offsetX < 0) offsetX = 0;
+        if (offsetX > rect.width) offsetX = rect.width;
+        const percentage = (offsetX / rect.width) * 100;
+        sliderHandle.style.left = `${percentage}%`;
+        afterImage.style.clipPath = `polygon(0 0, ${percentage}% 0, ${percentage}% 100%, 0 100%)`;
+      }
+
+      sliderContainer.addEventListener('mousedown', () => isDragging = true);
+      window.addEventListener('mouseup', () => isDragging = false);
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        updateSlider(e.clientX);
+      });
+
+      sliderContainer.addEventListener('touchstart', () => isDragging = true);
+      window.addEventListener('touchend', () => isDragging = false);
+      window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        updateSlider(e.touches[0].clientX);
+      });
+
+      // Dynamic Pricing Calculator State
+      let currentMultiplier = 1.0;
+      let selectedVehicleLabel = "Sedan / Coupe";
+      const vehicleButtons = document.querySelectorAll('.vehicle-btn');
+      const packageSelect = document.getElementById('package-select');
+      const addonCheckboxes = document.querySelectorAll('.addon-checkbox');
+      const totalPriceEl = document.getElementById('total-price');
+
+      function calculateTotal() {
+        const basePackage = parseFloat(packageSelect.value);
+        let addonsSum = 0;
+        addonCheckboxes.forEach(cb => {
+          if (cb.checked) addonsSum += parseFloat(cb.value);
+        });
+
+        const finalPrice = Math.round((basePackage * currentMultiplier) + addonsSum);
+        
+        gsap.to(totalPriceEl, {
+          scale: 1.1,
+          duration: 0.1,
+          yoyo: true,
+          repeat: 1,
+          onComplete: () => {
+            totalPriceEl.textContent = `$${finalPrice}`;
+          }
+        });
+
+        return finalPrice;
+      }
+
+      vehicleButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          vehicleButtons.forEach(b => {
+            b.classList.remove('active', 'border-brand-cyan', 'bg-cyan-500/10', 'text-white');
+            b.classList.add('border-slate-700', 'bg-slate-900/60', 'text-slate-400');
+          });
+          btn.classList.add('active', 'border-brand-cyan', 'bg-cyan-500/10', 'text-white');
+          btn.classList.remove('border-slate-700', 'bg-slate-900/60', 'text-slate-400');
+          currentMultiplier = parseFloat(btn.dataset.multiplier);
+          selectedVehicleLabel = btn.dataset.label;
+          calculateTotal();
+        });
+      });
+
+      packageSelect.addEventListener('change', calculateTotal);
+      addonCheckboxes.forEach(cb => cb.addEventListener('change', calculateTotal));
+
+      // Services Cards Click Handler
+      document.querySelectorAll('.select-pkg-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const val = e.currentTarget.getAttribute('data-service-val');
+          packageSelect.value = val;
+          calculateTotal();
+
+          const pricingSection = document.getElementById('pricing');
+          const calcBox = document.getElementById('calculator-box');
+          
+          pricingSection.scrollIntoView({ behavior: 'smooth' });
+
+          // Flash highlight on calculator
+          gsap.fromTo(calcBox, 
+            { borderColor: "#22d3ee", boxShadow: "0 0 40px rgba(6, 182, 212, 0.6)" },
+            { borderColor: "rgba(255, 255, 255, 0.08)", boxShadow: "none", duration: 1.5, delay: 0.4 }
+          );
+        });
+      });
+
+      // Modal Booking Logic
+      const bookingModal = document.getElementById('booking-modal');
+      const modalContainer = document.getElementById('modal-container');
+      const modalFormView = document.getElementById('modal-form-view');
+      const modalSuccessView = document.getElementById('modal-success-view');
+      const modalSummaryPackage = document.getElementById('modal-summary-package');
+      const modalSummaryPrice = document.getElementById('modal-summary-price');
+      const bookingDateInput = document.getElementById('cust-date');
+      const formError = document.getElementById('form-error');
+      const phoneInput = document.getElementById('cust-phone');
+
+      // Set min date to today
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (bookingDateInput) {
+        bookingDateInput.min = todayStr;
+        bookingDateInput.value = todayStr;
+      }
+
+      function openModal() {
+        const selectedPkgText = packageSelect.options[packageSelect.selectedIndex].text.split('(')[0];
+        const totalAmount = calculateTotal();
+        
+        modalSummaryPackage.textContent = `${selectedPkgText} (${selectedVehicleLabel})`;
+        modalSummaryPrice.textContent = `$${totalAmount}`;
+        
+        formError.classList.add('hidden');
+        modalFormView.classList.remove('hidden');
+        modalSuccessView.classList.add('hidden');
+        bookingModal.classList.remove('hidden');
+
+        gsap.fromTo(modalContainer, 
+          { scale: 0.9, opacity: 0, y: 30 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }
+        );
+      }
+
+      function closeModal() {
+        bookingModal.classList.add('hidden');
+      }
+
+      // Attach Click Listeners
+      document.getElementById('nav-book-btn').addEventListener('click', openModal);
+      document.getElementById('calc-reserve-btn').addEventListener('click', openModal);
+      document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+      document.getElementById('success-done-btn').addEventListener('click', closeModal);
+
+      bookingModal.addEventListener('click', (e) => {
+        if (e.target === bookingModal) closeModal();
+      });
+
+      // US Phone Number Auto-Formatter: (512) 123-4567
+      phoneInput.addEventListener('input', (e) => {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+      });
+
+      // Anti-Spam & Booking Submit Handler
+      const bookingForm = document.getElementById('booking-form');
+      bookingForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        // 1. Anti-Spam Honeypot Check
+        const honeypotVal = document.getElementById('hp_website_url').value;
+        if (honeypotVal) {
+          console.warn("Spam bot detected via Honeypot trap.");
+          return; // Silently reject
+        }
+
+        // 2. Anti-Spam Rate Limiting Check (Max 2 bookings per 10 mins from same client)
+        const lastBookingTime = localStorage.getItem('last_apex_booking');
+        const now = Date.now();
+        if (lastBookingTime && (now - parseInt(lastBookingTime)) < 30000) { // 30 sec cooldown
+          formError.textContent = "Please wait a moment before submitting another booking request.";
+          formError.classList.remove('hidden');
+          return;
+        }
+
+        // 3. Phone number validation (at least 10 digits)
+        const rawDigits = phoneInput.value.replace(/\D/g, '');
+        if (rawDigits.length < 10) {
+          formError.textContent = "Please enter a valid 10-digit US phone number.";
+          formError.classList.remove('hidden');
+          return;
+        }
+
+        // Collect Payload (Ready for Webhook / CRM / Zapier)
+        const bookingPayload = {
+          name: document.getElementById('cust-name').value,
+          phone: phoneInput.value,
+          date: bookingDateInput.value,
+          time: document.getElementById('cust-time').value,
+          address: document.getElementById('cust-address').value,
+          vehicle: document.getElementById('cust-vehicle').value,
+          service: modalSummaryPackage.textContent,
+          totalPrice: modalSummaryPrice.textContent,
+          submittedAt: new Date().toISOString()
+        };
+
+        console.log("Ready Payload for Webhook / Zapier:", bookingPayload);
+
+        // Store rate-limit timestamp
+        localStorage.setItem('last_apex_booking', now.toString());
+
+        // UI State -> Success Screen
+        document.getElementById('success-phone').textContent = bookingPayload.phone;
+        modalFormView.classList.add('hidden');
+        modalSuccessView.classList.remove('hidden');
+        lucide.createIcons();
+
+        gsap.from("#modal-success-view", { scale: 0.85, opacity: 0, duration: 0.4, ease: "back.out(1.5)" });
+      });
+
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-space-grotesk), sans-serif;
+
+  --color-brand-cyan: #06b6d4;
+  --color-brand-neon: #22d3ee;
+  --color-brand-dark: #080c14;
+  --color-brand-surface: #0f172a;
+  --color-brand-card: #131f37;
+}
+
+:root {
+  --background: #080c14;
+  --foreground: #e2e8f0;
+}
+
+body {
+  background-color: var(--color-brand-dark);
+  color: #e2e8f0;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom Glassmorphism */
+.glassmorphism {
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glassmorphism-card {
+  background: rgba(19, 31, 55, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Glow Effect */
+.glow-effect {
+  box-shadow: 0 0 45px -8px rgba(6, 182, 212, 0.35);
+}
+
+.glow-effect-subtle {
+  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.2);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, #ffffff 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+  background: rgba(4, 7, 13, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+/* Honeypot Spam Trap Style */
+.hp-field {
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  width: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #080c14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4;
+}
