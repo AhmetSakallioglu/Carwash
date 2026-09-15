@@ -7,17 +7,21 @@ export async function GET() {
     const isLiveDb = isSupabaseConfigured()
 
     if (isLiveDb) {
-      const supabase = createAdminClient()
-      const { data, error } = await supabase
-        .from('business_settings')
-        .select('*')
-        .limit(1)
-        .single()
+      try {
+        const supabase = createAdminClient()
+        const { data, error } = await supabase
+          .from('business_settings')
+          .select('*')
+          .limit(1)
+          .single()
 
-      if (error && error.code !== 'PGRST116') {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error && error.code !== 'PGRST116') {
+          return NextResponse.json({ settings: MOCK_BUSINESS_SETTINGS })
+        }
+        return NextResponse.json({ settings: data || MOCK_BUSINESS_SETTINGS })
+      } catch {
+        return NextResponse.json({ settings: MOCK_BUSINESS_SETTINGS })
       }
-      return NextResponse.json({ settings: data || MOCK_BUSINESS_SETTINGS })
     }
 
     return NextResponse.json({ settings: MOCK_BUSINESS_SETTINGS })

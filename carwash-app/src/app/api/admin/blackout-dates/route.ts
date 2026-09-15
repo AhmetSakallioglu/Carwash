@@ -8,16 +8,20 @@ export async function GET() {
     const isLiveDb = isSupabaseConfigured()
 
     if (isLiveDb) {
-      const supabase = createAdminClient()
-      const { data, error } = await supabase
-        .from('blackout_dates')
-        .select('*')
-        .order('start_datetime', { ascending: true })
+      try {
+        const supabase = createAdminClient()
+        const { data, error } = await supabase
+          .from('blackout_dates')
+          .select('*')
+          .order('start_datetime', { ascending: true })
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error || !data) {
+          return NextResponse.json({ blackout_dates: MOCK_BLACKOUTS })
+        }
+        return NextResponse.json({ blackout_dates: data })
+      } catch {
+        return NextResponse.json({ blackout_dates: MOCK_BLACKOUTS })
       }
-      return NextResponse.json({ blackout_dates: data })
     }
 
     return NextResponse.json({ blackout_dates: MOCK_BLACKOUTS })

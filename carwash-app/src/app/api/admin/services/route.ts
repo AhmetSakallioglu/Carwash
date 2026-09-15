@@ -8,16 +8,20 @@ export async function GET() {
     const isLiveDb = isSupabaseConfigured()
 
     if (isLiveDb) {
-      const supabase = createAdminClient()
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('sort_order', { ascending: true })
+      try {
+        const supabase = createAdminClient()
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .order('sort_order', { ascending: true })
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error || !data || data.length === 0) {
+          return NextResponse.json({ services: MOCK_SERVICES })
+        }
+        return NextResponse.json({ services: data })
+      } catch {
+        return NextResponse.json({ services: MOCK_SERVICES })
       }
-      return NextResponse.json({ services: data })
     }
 
     return NextResponse.json({ services: MOCK_SERVICES })

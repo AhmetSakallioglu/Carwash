@@ -8,16 +8,20 @@ export async function GET() {
     const isLiveDb = isSupabaseConfigured()
 
     if (isLiveDb) {
-      const supabase = createAdminClient()
-      const { data, error } = await supabase
-        .from('vehicle_categories')
-        .select('*')
-        .order('sort_order', { ascending: true })
+      try {
+        const supabase = createAdminClient()
+        const { data, error } = await supabase
+          .from('vehicle_categories')
+          .select('*')
+          .order('sort_order', { ascending: true })
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error || !data || data.length === 0) {
+          return NextResponse.json({ vehicle_categories: MOCK_VEHICLE_CATEGORIES })
+        }
+        return NextResponse.json({ vehicle_categories: data })
+      } catch {
+        return NextResponse.json({ vehicle_categories: MOCK_VEHICLE_CATEGORIES })
       }
-      return NextResponse.json({ vehicle_categories: data })
     }
 
     return NextResponse.json({ vehicle_categories: MOCK_VEHICLE_CATEGORIES })

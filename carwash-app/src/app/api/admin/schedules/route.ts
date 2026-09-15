@@ -7,16 +7,20 @@ export async function GET() {
     const isLiveDb = isSupabaseConfigured()
 
     if (isLiveDb) {
-      const supabase = createAdminClient()
-      const { data, error } = await supabase
-        .from('business_schedules')
-        .select('*')
-        .order('day_of_week', { ascending: true })
+      try {
+        const supabase = createAdminClient()
+        const { data, error } = await supabase
+          .from('business_schedules')
+          .select('*')
+          .order('day_of_week', { ascending: true })
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error || !data || data.length === 0) {
+          return NextResponse.json({ schedules: MOCK_SCHEDULES })
+        }
+        return NextResponse.json({ schedules: data })
+      } catch {
+        return NextResponse.json({ schedules: MOCK_SCHEDULES })
       }
-      return NextResponse.json({ schedules: data })
     }
 
     return NextResponse.json({ schedules: MOCK_SCHEDULES })

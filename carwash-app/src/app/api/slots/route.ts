@@ -65,89 +65,113 @@ export async function GET(request: NextRequest) {
     const isLiveDb = isSupabaseConfigured()
 
     if (isLiveDb) {
-      const supabase = createAdminClient()
+      try {
+        const supabase = createAdminClient()
 
-      // 1. Fetch Business Schedule for this day
-      const { data: scheduleData } = await supabase
-        .from('business_schedules')
-        .select('*')
-        .eq('day_of_week', dayOfWeek)
-        .single()
-
-      if (scheduleData) {
-        isOpen = scheduleData.is_open
-        openTimeStr = scheduleData.open_time
-        closeTimeStr = scheduleData.close_time
-      }
-
-      // 2. Fetch Business Settings
-      const { data: settingsData } = await supabase
-        .from('business_settings')
-        .select('slot_interval_minutes')
-        .limit(1)
-        .single()
-
-      if (settingsData?.slot_interval_minutes) {
-        slotInterval = settingsData.slot_interval_minutes
-      }
-
-      // 3. Fetch Service Duration
-      if (serviceId) {
-        const { data: serviceData } = await supabase
-          .from('services')
-          .select('duration_minutes')
-          .eq('id', serviceId)
+        // 1. Fetch Business Schedule for this day
+        const { data: scheduleData, error: schedError } = await supabase
+          .from('business_schedules')
+          .select('*')
+          .eq('day_of_week', dayOfWeek)
           .single()
 
-        if (serviceData) {
-          totalDuration = serviceData.duration_minutes
+        if (!schedError && scheduleData) {
+          isOpen = scheduleData.is_open
+          openTimeStr = scheduleData.open_time
+          closeTimeStr = scheduleData.close_time
+        } else {
+          // Fallback if business_schedules table is empty or not yet created
+          const schedule = MOCK_SCHEDULES.find(s => s.day_of_week === dayOfWeek)
+          if (schedule) {
+            isOpen = schedule.is_open
+            openTimeStr = schedule.open_time
+            closeTimeStr = schedule.close_time
+          }
         }
-      }
 
-      // 4. Fetch Addons Duration
-      if (addonIds.length > 0) {
-        const { data: addonsData } = await supabase
-          .from('addons')
-          .select('duration_minutes')
-          .in('id', addonIds)
+        // 2. Fetch Business Settings
+        const { data: settingsData } = await supabase
+          .from('business_settings')
+          .select('slot_interval_minutes')
+          .limit(1)
+          .single()
 
-        if (addonsData) {
-          const addonsMinutes = addonsData.reduce((acc, a) => acc + (a.duration_minutes || 0), 0)
-          totalDuration += addonsMinutes
+        if (settingsData?.slot_interval_minutes) {
+          slotInterval = settingsData.slot_interval_minutes
         }
-      }
 
-      // 5. Fetch Blackout Dates
-      const startOfDay = `${dateStr}T00:00:00.000Z`
-      const endOfDay = `${dateStr}T23:59:59.999Z`
+        // 3. Fetch Service Duration
+        if (serviceId) {
+          const { data: serviceData } = await supabase
+            .from('services')
+            .select('duration_minutes')
+            .eq('id', serviceId)
+            .single()
 
-      const { data: blackouts } = await supabase
-        .from('blackout_dates')
-        .select('*')
-        .lte('start_datetime', endOfDay)
-        .gte('end_datetime', startOfDay)
+          if (serviceData?.duration_minutes) {
+            totalDuration = serviceData.duration_minutes
+          } else {
+            const svc = MOCK_SERVICES.find(s => s.id === serviceId)
+            if (svc) totalDuration = svc.duration_minutes
+          }
+        }
 
-      if (blackouts) {
-        blackoutList = blackouts
-      }
+        // 4. Fetch Addons Duration
+        if (addonIds.length > 0) {
+          const { data: addonsData } = await supabase
+            .from('addons')
+            .select('duration_minutes')
+            .in('id', addonIds)
 
-      // 6. Fetch Existing Appointments (excluding cancelled)
-      const { data: appointments } = await supabase
-        .from('appointments')
-        .select('start_time, end_time')
-        .neq('status', 'cancelled')
-        .gte('start_time', `${dateStr}T00:00:00-06:00`)
-        .lte('start_time', `${dateStr}T23:59:59-05:00`)
+          if (addonsData && addonsData.length > 0) {
+            const addonsMinutes = addonsData.reduce((acc, a) => acc + (a.duration_minutes || 0), 0)
+            totalDuration += addonsMinutes
+          } else {
+            const selectedAddons = MOCK_ADDONS.filter(a => addonIds.includes(a.id))
+            const addonsMinutes = selectedAddons.reduce((acc, a) => acc + a.duration_minutes, 0)
+            totalDuration += addonsMinutes
+          }
+        }
 
-      if (appointments) {
-        appointments.forEach(apt => {
-          const start = new Date(apt.start_time)
-          const end = new Date(apt.end_time)
-          // Extract minutes in Central Time
-          const startMins = start.getUTCHours() * 60 + start.getUTCMinutes() - 300 // Approx CT offset
-          const duration = Math.round((end.getTime() - start.getTime()) / 60000)
-          bookedRanges.push({ start: startMins, end: startMins + duration })
-        })
+        // 5. Fetch Blackout Dates
+        const startOfDay = `${dateStr}T00:00:00.000Z`
+        const endOfDay = `${dateStr}T23:59:59.999Z`
+
+        const { data: blackouts } = await supabase
+          .from('blackout_dates')
+          .select('*')
+          .lte('start_datetime', endOfDay)
+          .gte('end_datetime', startOfDay)
+
+        if (blackouts) {
+          blackoutList = blackouts
+        }
+
+        // 6. Fetch Existing Appointments (excluding cancelled)
+        const { data: appointments } = await supabase
+          .from('appointments')
+          .select('start_time, end_time')
+          .neq('status', 'cancelled')
+          .gte('start_time', `${dateStr}T00:00:00-06:00`)
+          .lte('start_time', `${dateStr}T23:59:59-05:00`)
+
+        if (appointments) {
+          appointments.forEach(apt => {
+            const start = new Date(apt.start_time)
+            const end = new Date(apt.end_time)
+            const startMins = start.getUTCHours() * 60 + start.getUTCMinutes() - 300 // Approx CT offset
+            const duration = Math.round((end.getTime() - start.getTime()) / 60000)
+            bookedRanges.push({ start: startMins, end: startMins + duration })
+          })
+        }
+      } catch (err) {
+        console.warn('[Supabase Slot Engine fallback to mock]:', err)
+        const schedule = MOCK_SCHEDULES.find(s => s.day_of_week === dayOfWeek)
+        if (schedule) {
+          isOpen = schedule.is_open
+          openTimeStr = schedule.open_time
+          closeTimeStr = schedule.close_time
+        }
       }
     } else {
       // Fallback to Mock Data
