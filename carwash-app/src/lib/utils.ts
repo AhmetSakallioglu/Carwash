@@ -1,5 +1,5 @@
 /**
- * APEX Detail Studio - Core Utility Helpers
+ * OZER Detail Studio - Core Utility Helpers
  * Austin, Texas, USA
  */
 

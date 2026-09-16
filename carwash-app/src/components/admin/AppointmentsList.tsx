@@ -81,7 +81,7 @@ export function AppointmentsList({
   return (
     <div className="space-y-6">
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="glassmorphism p-4 rounded-2xl border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
             <span>Total Value</span>
@@ -141,11 +141,11 @@ export function AppointmentsList({
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-slate-400" />
+          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
           <select
             value={statusFilter}
             onChange={e => onStatusFilterChange(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer"
+            className="flex-1 sm:flex-none bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer"
           >
             <option value="all">All Statuses</option>
             <option value="confirmed">Confirmed</option>
@@ -156,8 +156,94 @@ export function AppointmentsList({
         </div>
       </div>
 
+      {/* Appointments: mobile cards */}
+      <div className="md:hidden space-y-3">
+        {appointments.length === 0 ? (
+          <div className="glassmorphism rounded-2xl border border-slate-800 px-5 py-12 text-center text-slate-500 text-xs">
+            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40 text-brand-cyan" />
+            No appointments match your filters.
+          </div>
+        ) : (
+          appointments.map(apt => (
+            <div
+              key={apt.id}
+              className="glassmorphism rounded-2xl border border-slate-800 p-4 space-y-3"
+            >
+              <button
+                type="button"
+                onClick={() => onSelectAppointment(apt)}
+                className="w-full text-left space-y-2 cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-mono font-bold text-brand-neon text-xs">
+                      {apt.appointment_code}
+                    </div>
+                    <div className="font-semibold text-white text-sm mt-0.5 truncate">
+                      {apt.customer_name}
+                    </div>
+                    <div className="text-slate-400 text-[11px]">{apt.customer_phone}</div>
+                  </div>
+                  {getStatusBadge(apt.status)}
+                </div>
+                <div className="text-white text-xs font-medium">{formatDateTimeCT(apt.start_time)}</div>
+                <div className="text-slate-300 text-xs truncate">
+                  {apt.service?.name || 'Detailing Package'}
+                </div>
+                <div className="text-slate-400 text-[11px] flex items-center gap-1 min-w-0">
+                  <Car className="w-3 h-3 text-slate-500 shrink-0" />
+                  <span className="truncate">{apt.vehicle_details}</span>
+                </div>
+                <div className="font-bold text-white text-sm">{formatCurrency(apt.total_price)}</div>
+              </button>
+
+              <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800">
+                <button
+                  onClick={() => onSelectAppointment(apt)}
+                  type="button"
+                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                  title="View Details"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                {apt.status !== 'cancelled' && (
+                  <>
+                    <button
+                      onClick={() => onReschedule(apt)}
+                      type="button"
+                      className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-brand-neon border border-cyan-500/30 transition"
+                      title="Reschedule"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onCancel(apt)}
+                      type="button"
+                      className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition"
+                      title="Cancel Booking"
+                    >
+                      <Ban className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                {apt.status === 'confirmed' && (
+                  <button
+                    onClick={() => onMarkCompleted(apt.id)}
+                    type="button"
+                    className="p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition"
+                    title="Mark Completed"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Appointments Table */}
-      <div className="glassmorphism rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+      <div className="hidden md:block glassmorphism rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
             <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">

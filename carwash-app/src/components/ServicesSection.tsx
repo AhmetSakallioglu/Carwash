@@ -28,7 +28,7 @@ export function ServicesSection({ services, onSelectService }: ServicesSectionPr
   const activeServices = services.filter(s => s.is_active)
 
   return (
-    <section id="services" className="py-24 px-6 scroll-mt-20">
+    <section id="services" className="py-16 sm:py-24 px-4 sm:px-6 scroll-mt-24">
       <div className="max-w-6xl mx-auto">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-xs font-bold uppercase tracking-widest text-brand-cyan mb-2">
@@ -42,7 +42,7 @@ export function ServicesSection({ services, onSelectService }: ServicesSectionPr
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {activeServices.map((service, index) => {
             const isFeatured = service.is_featured
             return (

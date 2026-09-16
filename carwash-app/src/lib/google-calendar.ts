@@ -54,7 +54,7 @@ export async function createCalendarEvent(payload: CalendarEventPayload): Promis
 
   const summary = `🚗 [${appointment.appointment_code}] ${serviceName} - ${appointment.customer_name}`
   const description = [
-    `APEX Detail Studio Booking`,
+    `OZER Detail Studio Booking`,
     `----------------------------------------`,
     `Confirmation Code: ${appointment.appointment_code}`,
     `Customer: ${appointment.customer_name}`,
@@ -119,7 +119,7 @@ export async function updateCalendarEvent(
 
   const summary = `🚗 [${appointment.appointment_code}] ${serviceName} - ${appointment.customer_name}`
   const description = [
-    `APEX Detail Studio Booking (UPDATED)`,
+    `OZER Detail Studio Booking (UPDATED)`,
     `----------------------------------------`,
     `Confirmation Code: ${appointment.appointment_code}`,
     `Customer: ${appointment.customer_name}`,

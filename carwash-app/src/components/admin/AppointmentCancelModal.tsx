@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Appointment } from '@/types'
+import { updateAppointmentAction } from '@/app/actions/admin'
 import { X, Ban, AlertTriangle, Loader2 } from 'lucide-react'
 
 interface AppointmentCancelModalProps {
@@ -27,21 +28,16 @@ export function AppointmentCancelModal({
     setErrorMessage(null)
 
     try {
-      const res = await fetch(`/api/admin/appointments/${appointment.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'cancelled',
-          cancellation_reason: reason.trim() || 'Cancelled by studio administrator',
-        }),
+      const result = await updateAppointmentAction(appointment.id, {
+        status: 'cancelled',
+        cancellation_reason: reason.trim() || 'Cancelled by studio administrator',
       })
 
-      const data = await res.json()
-      if (data.success) {
+      if (result.success) {
         onSuccess()
         onClose()
       } else {
-        setErrorMessage(data.error || 'Failed to cancel appointment')
+        setErrorMessage(result.error || 'Failed to cancel appointment')
       }
     } catch {
       setErrorMessage('Server connection error')
@@ -53,9 +49,9 @@ export function AppointmentCancelModal({
   if (!appointment) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
+        className="relative w-full sm:max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl overflow-y-auto max-h-[96dvh] sm:max-h-[90vh]"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start justify-between pb-4 border-b border-slate-800">
@@ -107,7 +103,7 @@ export function AppointmentCancelModal({
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}

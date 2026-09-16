@@ -1,0 +1,224 @@
+import { createAdminClient, isSupabaseConfigured } from './admin'
+import {
+  MOCK_SERVICES,
+  MOCK_VEHICLE_CATEGORIES,
+  MOCK_ADDONS,
+  MOCK_BUSINESS_SETTINGS,
+  MOCK_SCHEDULES,
+  MOCK_BLACKOUTS,
+  MOCK_APPOINTMENTS,
+} from './mock-data'
+import {
+  Service,
+  VehicleCategory,
+  Addon,
+  BusinessSettings,
+  BusinessSchedule,
+  BlackoutDate,
+  Appointment,
+} from '@/types'
+
+/**
+ * Execute a promise with a safety timeout so it never hangs indefinitely
+ */
+async function withTimeout<T>(promise: Promise<T>, timeoutMs = 4000, fallback: T): Promise<T> {
+  let timer: NodeJS.Timeout
+  const timeoutPromise = new Promise<T>(resolve => {
+    timer = setTimeout(() => {
+      resolve(fallback)
+    }, timeoutMs)
+  })
+
+  try {
+    const result = await Promise.race([promise, timeoutPromise])
+    clearTimeout(timer!)
+    return result
+  } catch (err) {
+    clearTimeout(timer!)
+    console.warn('[DB Query Timeout/Error fallback]:', err)
+    return fallback
+  }
+}
+
+export async function getServices(): Promise<Service[]> {
+  if (!isSupabaseConfigured()) return MOCK_SERVICES
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (error) {
+        console.warn('[getServices] Supabase error:', error.message)
+        return MOCK_SERVICES
+      }
+      return (data || []) as unknown as Service[]
+    })(),
+    4000,
+    MOCK_SERVICES
+  )
+}
+
+export async function getVehicleCategories(): Promise<VehicleCategory[]> {
+  if (!isSupabaseConfigured()) return MOCK_VEHICLE_CATEGORIES
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('vehicle_categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (error) {
+        console.warn('[getVehicleCategories] Supabase error:', error.message)
+        return MOCK_VEHICLE_CATEGORIES
+      }
+      return (data || []) as unknown as VehicleCategory[]
+    })(),
+    4000,
+    MOCK_VEHICLE_CATEGORIES
+  )
+}
+
+export async function getAddons(): Promise<Addon[]> {
+  if (!isSupabaseConfigured()) return MOCK_ADDONS
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('addons')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (error) {
+        console.warn('[getAddons] Supabase error:', error.message)
+        return MOCK_ADDONS
+      }
+      return (data || []) as unknown as Addon[]
+    })(),
+    4000,
+    MOCK_ADDONS
+  )
+}
+
+export async function getBusinessSettings(): Promise<BusinessSettings> {
+  if (!isSupabaseConfigured()) return MOCK_BUSINESS_SETTINGS
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('business_settings')
+        .select('*')
+        .limit(1)
+        .single()
+
+      if (error || !data) {
+        return MOCK_BUSINESS_SETTINGS
+      }
+      return data as unknown as BusinessSettings
+    })(),
+    4000,
+    MOCK_BUSINESS_SETTINGS
+  )
+}
+
+export async function getBusinessSchedules(): Promise<BusinessSchedule[]> {
+  if (!isSupabaseConfigured()) return MOCK_SCHEDULES
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('business_schedules')
+        .select('*')
+        .order('day_of_week', { ascending: true })
+
+      if (error) {
+        console.warn('[getBusinessSchedules] Supabase error:', error.message)
+        return MOCK_SCHEDULES
+      }
+      return (data && data.length > 0 ? data : MOCK_SCHEDULES) as unknown as BusinessSchedule[]
+    })(),
+    4000,
+    MOCK_SCHEDULES
+  )
+}
+
+export async function getBlackoutDates(): Promise<BlackoutDate[]> {
+  if (!isSupabaseConfigured()) return MOCK_BLACKOUTS
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('blackout_dates')
+        .select('*')
+        .order('start_datetime', { ascending: true })
+
+      if (error) {
+        console.warn('[getBlackoutDates] Supabase error:', error.message)
+        return MOCK_BLACKOUTS
+      }
+      return (data || []) as unknown as BlackoutDate[]
+    })(),
+    4000,
+    MOCK_BLACKOUTS
+  )
+}
+
+export async function getAppointments(filters?: {
+  status?: string
+  search?: string
+  startDate?: string
+  endDate?: string
+}): Promise<Appointment[]> {
+  if (!isSupabaseConfigured()) return MOCK_APPOINTMENTS
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      let query = supabase
+        .from('appointments')
+        .select(`
+          *,
+          service:services(*),
+          vehicle_category:vehicle_categories(*)
+        `)
+        .order('start_time', { ascending: false })
+
+      if (filters?.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status)
+      }
+
+      if (filters?.startDate) {
+        query = query.gte('start_time', `${filters.startDate}T00:00:00Z`)
+      }
+
+      if (filters?.endDate) {
+        query = query.lte('start_time', `${filters.endDate}T23:59:59Z`)
+      }
+
+      if (filters?.search) {
+        query = query.or(
+          `customer_name.ilike.%${filters.search}%,customer_phone.ilike.%${filters.search}%,appointment_code.ilike.%${filters.search}%`
+        )
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.warn('[getAppointments] Supabase error:', error.message)
+        return MOCK_APPOINTMENTS
+      }
+      return (data || []) as unknown as Appointment[]
+    })(),
+    4000,
+    MOCK_APPOINTMENTS
+  )
+}

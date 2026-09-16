@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Appointment, TimeSlot, SlotsApiResponse } from '@/types'
 import { formatDateTimeCT } from '@/lib/utils'
+import { updateAppointmentAction } from '@/app/actions/admin'
 import { X, Calendar, RotateCcw, AlertCircle, Loader2 } from 'lucide-react'
+import { DatePickerCalendar, toISODate } from '@/components/DatePickerCalendar'
 
 interface AppointmentRescheduleModalProps {
   appointment: Appointment | null
@@ -16,7 +18,7 @@ export function AppointmentRescheduleModal({
   onClose,
   onSuccess,
 }: AppointmentRescheduleModalProps) {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = toISODate(new Date())
   const [selectedDate, setSelectedDate] = useState(todayStr)
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [selectedSlotIso, setSelectedSlotIso] = useState('')
@@ -73,22 +75,17 @@ export function AppointmentRescheduleModal({
     setErrorMessage(null)
 
     try {
-      const res = await fetch(`/api/admin/appointments/${appointment.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          start_time: selectedSlotIso,
-          end_time: selectedSlotEndIso,
-          status: 'confirmed',
-        }),
+      const result = await updateAppointmentAction(appointment.id, {
+        start_time: selectedSlotIso,
+        end_time: selectedSlotEndIso,
+        status: 'confirmed',
       })
 
-      const data = await res.json()
-      if (data.success) {
+      if (result.success) {
         onSuccess()
         onClose()
       } else {
-        setErrorMessage(data.error || 'Failed to reschedule appointment')
+        setErrorMessage(result.error || 'Failed to reschedule appointment')
       }
     } catch {
       setErrorMessage('Server connection error')
@@ -100,9 +97,9 @@ export function AppointmentRescheduleModal({
   if (!appointment) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
+        className="relative w-full sm:max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl overflow-y-auto max-h-[96dvh] sm:max-h-[90vh]"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start justify-between pb-4 border-b border-slate-800">
@@ -137,21 +134,18 @@ export function AppointmentRescheduleModal({
           )}
 
           <div>
-            <label className="block font-semibold text-slate-300 mb-1">
+            <label className="block font-semibold text-slate-300 mb-2">
               New Date *
             </label>
-            <input
-              type="date"
-              required
-              min={todayStr}
+            <DatePickerCalendar
               value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan cursor-pointer"
+              onChange={setSelectedDate}
+              minDate={todayStr}
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-300 mb-1 flex items-center justify-between">
+            <label className="block font-semibold text-slate-300 mb-2 flex items-center justify-between">
               <span>New Available Slot *</span>
               {isLoadingSlots && <Loader2 className="w-3 h-3 animate-spin text-brand-cyan" />}
             </label>
@@ -161,18 +155,25 @@ export function AppointmentRescheduleModal({
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking slot availability...
               </div>
             ) : slots.length > 0 ? (
-              <select
-                required
-                value={selectedSlotIso}
-                onChange={e => handleSlotChange(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan cursor-pointer"
-              >
-                {slots.map((s, idx) => (
-                  <option key={idx} value={s.startIso}>
-                    {s.time}
-                  </option>
-                ))}
-              </select>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {slots.map((s, idx) => {
+                  const active = s.startIso === selectedSlotIso
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSlotChange(s.startIso)}
+                      className={`px-2 py-2 rounded-xl text-[11px] font-semibold border transition cursor-pointer ${
+                        active
+                          ? 'bg-brand-cyan text-black border-brand-cyan'
+                          : 'bg-slate-950 text-slate-200 border-slate-700 hover:border-brand-cyan/50'
+                      }`}
+                    >
+                      {s.time}
+                    </button>
+                  )
+                })}
+              </div>
             ) : (
               <div className="w-full bg-slate-950/80 border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-amber-300 text-xs">
                 No slots available on this date.
@@ -184,7 +185,7 @@ export function AppointmentRescheduleModal({
             Note: Updating will automatically trigger an SMS notification to the customer and update the Google Calendar event.
           </p>
 
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}

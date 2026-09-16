@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { BusinessSettings } from '@/types'
+import { saveSettingsAction } from '@/app/actions/admin'
 import { Save, Check, Loader2, Building, Phone, Mail, MapPin, Clock } from 'lucide-react'
 
 interface BusinessSettingsManagerProps {
@@ -21,33 +22,27 @@ export function BusinessSettingsManager({ initialSettings }: BusinessSettingsMan
     setSaveSuccess(false)
 
     try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      })
-
-      const data = await res.json()
-      if (data.settings) {
-        setSettings(data.settings)
+      const result = await saveSettingsAction(settings)
+      if (result.success && result.data) {
+        setSettings(result.data)
         setSaveSuccess(true)
         setTimeout(() => setSaveSuccess(false), 3000)
       } else {
-        setErrorMessage(data.error || 'Failed to update business settings')
+        setErrorMessage(result.error || 'Failed to update business settings')
       }
-    } catch {
-      setErrorMessage('Connection error')
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Could not save settings. Please try again.')
     } finally {
       setIsSaving(false)
     }
   }
 
   return (
-    <div className="glassmorphism rounded-2xl border border-slate-800 p-6 shadow-xl max-w-3xl space-y-6">
-      <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-        <div>
+    <div className="glassmorphism rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-xl max-w-3xl space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+        <div className="min-w-0">
           <h3 className="font-display text-lg font-bold text-white flex items-center gap-2">
-            <Building className="w-5 h-5 text-brand-neon" /> Austin Business Settings
+            <Building className="w-5 h-5 text-brand-neon shrink-0" /> Austin Business Settings
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             Configure studio details, contact info, and calendar booking intervals.
@@ -58,7 +53,7 @@ export function BusinessSettingsManager({ initialSettings }: BusinessSettingsMan
           onClick={handleSave}
           disabled={isSaving}
           type="button"
-          className="flex items-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95 w-full sm:w-auto shrink-0"
         >
           {isSaving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -104,7 +99,7 @@ export function BusinessSettingsManager({ initialSettings }: BusinessSettingsMan
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block font-semibold text-slate-300 mb-1 flex items-center gap-1">
               <Phone className="w-3.5 h-3.5 text-brand-cyan" /> Phone Number (US) *
@@ -132,7 +127,7 @@ export function BusinessSettingsManager({ initialSettings }: BusinessSettingsMan
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           <div>
             <label className="block font-semibold text-slate-300 mb-1 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-brand-cyan" /> Operating Timezone

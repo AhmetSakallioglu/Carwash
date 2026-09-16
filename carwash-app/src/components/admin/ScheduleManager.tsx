@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { BusinessSchedule } from '@/types'
+import { saveSchedulesAction } from '@/app/actions/admin'
 import { Save, Check, Loader2, Clock } from 'lucide-react'
 
 interface ScheduleManagerProps {
@@ -55,19 +56,13 @@ export function ScheduleManager({ initialSchedules }: ScheduleManagerProps) {
     setSaveSuccess(false)
 
     try {
-      const res = await fetch('/api/admin/schedules', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ schedules }),
-      })
-
-      const data = await res.json()
-      if (data.schedules) {
-        setSchedules(data.schedules)
+      const result = await saveSchedulesAction(schedules)
+      if (result.success && result.data) {
+        setSchedules(result.data)
         setSaveSuccess(true)
         setTimeout(() => setSaveSuccess(false), 3000)
       } else {
-        setErrorMessage(data.error || 'Failed to save schedules')
+        setErrorMessage(result.error || 'Failed to save schedules')
       }
     } catch {
       setErrorMessage('Connection error')
@@ -77,11 +72,11 @@ export function ScheduleManager({ initialSchedules }: ScheduleManagerProps) {
   }
 
   return (
-    <div className="glassmorphism rounded-2xl border border-slate-800 p-6 shadow-xl space-y-6">
-      <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-        <div>
+    <div className="glassmorphism rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-xl space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+        <div className="min-w-0">
           <h3 className="font-display text-lg font-bold text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-brand-neon" /> Daily Operating Hours
+            <Clock className="w-5 h-5 text-brand-neon shrink-0" /> Daily Operating Hours
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             Configure weekly business hours for dynamic slot generation in Austin, TX.
@@ -92,7 +87,7 @@ export function ScheduleManager({ initialSchedules }: ScheduleManagerProps) {
           onClick={handleSaveAll}
           disabled={isSaving}
           type="button"
-          className="flex items-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95 w-full sm:w-auto shrink-0"
         >
           {isSaving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -126,7 +121,7 @@ export function ScheduleManager({ initialSchedules }: ScheduleManagerProps) {
               }`}
             >
               {/* Day & Toggle */}
-              <div className="flex items-center justify-between sm:justify-start gap-4 mb-3 sm:mb-0 w-44">
+              <div className="flex items-center justify-between sm:justify-start gap-4 mb-3 sm:mb-0 w-full sm:w-44">
                 <span className="font-semibold text-xs text-white">{dayName}</span>
                 <button
                   type="button"
@@ -143,30 +138,30 @@ export function ScheduleManager({ initialSchedules }: ScheduleManagerProps) {
 
               {/* Time Inputs */}
               {isOpen ? (
-                <div className="flex items-center gap-3 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-slate-400 text-[11px]">Opens:</span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 text-xs w-full sm:w-auto">
+                  <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+                    <span className="text-slate-400 text-[11px] w-12 sm:w-auto">Opens:</span>
                     <input
                       type="time"
                       value={schedule.open_time.slice(0, 5)}
                       onChange={e =>
                         handleTimeChange(schedule.day_of_week, 'open_time', e.target.value)
                       }
-                      className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-brand-cyan"
+                      className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-brand-cyan min-w-0"
                     />
                   </div>
 
-                  <span className="text-slate-500">—</span>
+                  <span className="text-slate-500 hidden sm:inline">—</span>
 
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-slate-400 text-[11px]">Closes:</span>
+                  <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+                    <span className="text-slate-400 text-[11px] w-12 sm:w-auto">Closes:</span>
                     <input
                       type="time"
                       value={schedule.close_time.slice(0, 5)}
                       onChange={e =>
                         handleTimeChange(schedule.day_of_week, 'close_time', e.target.value)
                       }
-                      className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-brand-cyan"
+                      className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-brand-cyan min-w-0"
                     />
                   </div>
                 </div>

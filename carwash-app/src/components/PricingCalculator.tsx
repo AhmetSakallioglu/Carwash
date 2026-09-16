@@ -106,7 +106,7 @@ export function PricingCalculator({
   }, [isHighlighted])
 
   return (
-    <section id="pricing" className="py-24 px-6 bg-slate-950/80 border-y border-slate-800/80 scroll-mt-20">
+    <section id="pricing" className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-950/80 border-y border-slate-800/80 scroll-mt-24">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-xs font-bold uppercase tracking-widest text-brand-cyan mb-2">
@@ -122,7 +122,7 @@ export function PricingCalculator({
 
         <div
           ref={boxRef}
-          className="glassmorphism p-6 sm:p-10 rounded-3xl border border-slate-800 grid md:grid-cols-5 gap-8 items-stretch transition-all duration-500 shadow-2xl"
+          className="glassmorphism p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-3xl border border-slate-800 grid md:grid-cols-5 gap-6 sm:gap-8 items-stretch transition-all duration-500 shadow-2xl"
         >
           {/* Configuration Controls (Left 3 Columns) */}
           <div className="md:col-span-3 space-y-6">
@@ -131,7 +131,7 @@ export function PricingCalculator({
               <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">
                 1. Vehicle Category
               </label>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 min-[480px]:grid-cols-3 gap-2.5">
                 {activeCategories.map(cat => {
                   const isSelected = cat.id === currentCategory?.id
                   return (
@@ -145,7 +145,7 @@ export function PricingCalculator({
                           : 'border border-slate-700 bg-slate-900/60 text-slate-400 hover:border-slate-500 hover:text-slate-200'
                       }`}
                     >
-                      <div>{cat.label}</div>
+                      <div className="leading-snug">{cat.label}</div>
                       <div className="text-[10px] font-normal text-brand-neon/80 mt-0.5">
                         {vehicleCategorySubLabel(cat.label)}
                       </div>
@@ -185,15 +185,15 @@ export function PricingCalculator({
                     <label
                       key={addon.id}
                       onClick={() => onToggleAddonId(addon.id)}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition select-none ${
+                      className={`flex items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border cursor-pointer transition select-none ${
                         isChecked
                           ? 'bg-cyan-500/10 border-brand-cyan/60 text-white'
                           : 'bg-slate-900/40 border-slate-800 hover:border-slate-700 text-slate-300'
                       }`}
                     >
-                      <div className="flex items-center gap-3 text-xs">
+                      <div className="flex items-start sm:items-center gap-3 text-xs min-w-0">
                         <div
-                          className={`w-4 h-4 rounded flex items-center justify-center border ${
+                          className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 mt-0.5 sm:mt-0 ${
                             isChecked
                               ? 'bg-brand-cyan border-brand-cyan text-black'
                               : 'border-slate-700 bg-slate-950'
@@ -201,14 +201,14 @@ export function PricingCalculator({
                         >
                           {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
-                        <div>
-                          <span className="font-medium">{addon.name}</span>
-                          <span className="text-[10px] text-slate-500 ml-2">
+                        <div className="min-w-0">
+                          <span className="font-medium break-words">{addon.name}</span>
+                          <span className="text-[10px] text-slate-500 ml-2 whitespace-nowrap">
                             +{addon.duration_minutes} min
                           </span>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-brand-neon">
+                      <span className="text-xs font-bold text-brand-neon shrink-0">
                         +{formatCurrency(addon.price)}
                       </span>
                     </label>

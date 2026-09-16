@@ -54,13 +54,14 @@ export function Hero() {
   }, [hasAnimated])
 
   return (
-    <header className="relative min-h-[90vh] flex items-center justify-center pt-28 pb-16 px-6 overflow-hidden">
+    <header className="relative min-h-[88svh] flex items-center justify-center pt-24 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden">
       <div className="max-w-5xl mx-auto text-center z-10">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glassmorphism text-xs font-semibold text-brand-neon mb-6 border border-cyan-500/30">
-          <MapPin className="w-3.5 h-3.5" /> Mobile & Studio Detailing across Austin, TX
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glassmorphism text-[11px] sm:text-xs font-semibold text-brand-neon mb-6 border border-cyan-500/30 max-w-full">
+          <MapPin className="w-3.5 h-3.5 shrink-0" />
+          <span className="text-left">Mobile & Studio Detailing across Austin, TX</span>
         </div>
 
-        <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-tight">
+        <h1 className="font-display text-[2rem] leading-tight sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-6">
           Precision Auto Care for <br className="hidden sm:inline" />
           <span className="gradient-text">Austin&apos;s Finest Vehicles.</span>
         </h1>

@@ -5,6 +5,7 @@ import { SelectedConfiguration } from './PricingCalculator'
 import { TimeSlot, SlotsApiResponse, BookingResponse } from '@/types'
 import { formatUSPhoneNumber, isValidUSPhone, formatCurrency } from '@/lib/utils'
 import { X, Calendar, CheckCircle2, AlertCircle, Loader2, CheckCheck } from 'lucide-react'
+import { DatePickerCalendar, toISODate } from './DatePickerCalendar'
 
 interface BookingModalProps {
   isOpen: boolean
@@ -20,7 +21,7 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
   const [honeypot, setHoneypot] = useState('') // Spam trap field
 
   // Date selection (defaults to tomorrow if after 5pm, or today)
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = toISODate(new Date())
   const [selectedDate, setSelectedDate] = useState(todayStr)
 
   // Slots state
@@ -97,7 +98,7 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
     }
 
     // 2. Client-side Rate Limiting (30-second cooldown)
-    const lastBooking = localStorage.getItem('last_apex_booking')
+    const lastBooking = localStorage.getItem('last_ozer_booking')
     const now = Date.now()
     if (lastBooking && now - parseInt(lastBooking, 10) < 30000) {
       setErrorMessage('Please wait a moment before submitting another booking request.')
@@ -144,7 +145,7 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
       const data: BookingResponse = await res.json()
 
       if (data.success && data.appointment) {
-        localStorage.setItem('last_apex_booking', now.toString())
+        localStorage.setItem('last_ozer_booking', now.toString())
         setConfirmedBookingCode(data.appointment.appointment_code)
       } else {
         setErrorMessage(data.error || 'Failed to confirm reservation. Please try again.')
@@ -165,9 +166,9 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
   if (!isOpen || !configuration) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-lg glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[92vh] animate-in zoom-in-95 duration-200"
+        className="relative w-full sm:max-w-lg glassmorphism bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl overflow-y-auto max-h-[96dvh] sm:max-h-[92vh] animate-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -202,25 +203,25 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
             </p>
 
             <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-left text-xs space-y-2 mb-6 text-slate-300">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Service:</span>
-                <span className="font-semibold text-white">
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500 shrink-0">Service:</span>
+                <span className="font-semibold text-white text-right break-words">
                   {configuration.selectedService.name} ({configuration.selectedCategory.label})
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <span className="text-slate-500">Estimated Total:</span>
                 <span className="font-bold text-brand-neon">
                   {formatCurrency(configuration.totalPrice)}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <span className="text-slate-500">Payment:</span>
-                <span className="text-emerald-400 font-semibold">Pay On-Site After Service</span>
+                <span className="text-emerald-400 font-semibold text-right">Pay On-Site After Service</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Location:</span>
-                <span className="text-white truncate max-w-[200px]">{address}</span>
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500 shrink-0">Location:</span>
+                <span className="text-white text-right break-words">{address}</span>
               </div>
             </div>
 
@@ -248,22 +249,22 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
             </div>
 
             {/* Selected Summary Box */}
-            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-3.5 mb-5 flex justify-between items-center text-xs">
-              <div>
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-3.5 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+              <div className="min-w-0">
                 <span className="text-slate-400 block text-[11px]">Configured Service:</span>
-                <span className="font-bold text-white">
+                <span className="font-bold text-white break-words">
                   {configuration.selectedService.name}{' '}
                   <span className="text-slate-400 font-normal">
                     ({configuration.selectedCategory.label})
                   </span>
                 </span>
                 {configuration.selectedAddons.length > 0 && (
-                  <span className="text-[10px] text-brand-cyan block mt-0.5">
+                  <span className="text-[10px] text-brand-cyan block mt-0.5 break-words">
                     +{configuration.selectedAddons.map(a => a.name).join(', ')}
                   </span>
                 )}
               </div>
-              <div className="text-right shrink-0 ml-3">
+              <div className="text-left sm:text-right shrink-0">
                 <span className="text-slate-400 block text-[11px]">Total Price:</span>
                 <span className="font-bold text-brand-neon text-base">
                   {formatCurrency(configuration.totalPrice)}
@@ -291,7 +292,7 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
                 autoComplete="off"
               />
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">
                     Full Name *
@@ -321,49 +322,52 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Preferred Date *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    min={todayStr}
-                    value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1 flex items-center justify-between">
-                    <span>Available Slot *</span>
-                    {isLoadingSlots && <Loader2 className="w-3 h-3 animate-spin text-brand-cyan" />}
-                  </label>
+              <div>
+                <label className="block font-semibold text-slate-300 mb-2">
+                  Preferred Date *
+                </label>
+                <DatePickerCalendar
+                  value={selectedDate}
+                  onChange={setSelectedDate}
+                  minDate={todayStr}
+                />
+              </div>
 
-                  {isLoadingSlots ? (
-                    <div className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-400 text-xs flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking slots...
-                    </div>
-                  ) : slots.length > 0 ? (
-                    <select
-                      required
-                      value={selectedSlotIso}
-                      onChange={e => setSelectedSlotIso(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer"
-                    >
-                      {slots.map((s, idx) => (
-                        <option key={idx} value={s.startIso}>
+              <div>
+                <label className="block font-semibold text-slate-300 mb-2 flex items-center justify-between">
+                  <span>Available Slot *</span>
+                  {isLoadingSlots && <Loader2 className="w-3 h-3 animate-spin text-brand-cyan" />}
+                </label>
+
+                {isLoadingSlots ? (
+                  <div className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-400 text-xs flex items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking slots...
+                  </div>
+                ) : slots.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {slots.map((s, idx) => {
+                      const active = s.startIso === selectedSlotIso
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedSlotIso(s.startIso)}
+                          className={`px-2 py-2 rounded-xl text-[11px] font-semibold border transition cursor-pointer ${
+                            active
+                              ? 'bg-brand-cyan text-black border-brand-cyan'
+                              : 'bg-slate-950 text-slate-200 border-slate-700 hover:border-brand-cyan/50'
+                          }`}
+                        >
                           {s.time}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="w-full bg-slate-950/80 border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-amber-300/90 text-[11px]">
-                      {slotsMessage || 'No slots available'}
-                    </div>
-                  )}
-                </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="w-full bg-slate-950/80 border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-amber-300/90 text-[11px]">
+                    {slotsMessage || 'No slots available'}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -406,7 +410,8 @@ export function BookingModal({ isOpen, onClose, configuration }: BookingModalPro
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Confirming Austin Reservation...</span>
+                    <span className="hidden sm:inline">Confirming Austin Reservation...</span>
+                    <span className="sm:hidden">Confirming...</span>
                   </>
                 ) : (
                   <>

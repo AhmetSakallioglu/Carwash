@@ -8,30 +8,35 @@ import { AdminNav } from '@/components/admin/AdminNav'
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>('admin@ozerdetailaustin.com')
 
   useEffect(() => {
     if (pathname === '/admin/login') return
 
+    let cancelled = false
+
     const checkUser = async () => {
       try {
+        const hasDemoCookie = document.cookie.includes('ozer_admin_session=demo_active')
+        if (hasDemoCookie) {
+          if (!cancelled) setUserEmail('admin@ozerdetailaustin.com (Demo)')
+          return
+        }
+
         const supabase = createClient()
         const { data } = await supabase.auth.getUser()
-        if (data.user?.email) {
+        if (!cancelled && data.user?.email) {
           setUserEmail(data.user.email)
-        } else {
-          // Check for demo session cookie
-          const hasDemoCookie = document.cookie.includes('apex_admin_session=demo_active')
-          if (hasDemoCookie) {
-            setUserEmail('admin@apexdetailaustin.com (Demo)')
-          }
         }
       } catch {
-        setUserEmail('admin@apexdetailaustin.com')
+        if (!cancelled) setUserEmail('admin@ozerdetailaustin.com')
       }
     }
 
-    checkUser()
+    void checkUser()
+    return () => {
+      cancelled = true
+    }
   }, [pathname])
 
   const handleSignOut = async () => {
@@ -39,13 +44,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const supabase = createClient()
       await supabase.auth.signOut()
     } catch {
-      // Ignore
+      // Ignore auth errors on demo sessions
     }
-    document.cookie = 'apex_admin_session=; path=/; max-age=0;'
+    document.cookie = 'ozer_admin_session=; path=/; max-age=0;'
     router.push('/admin/login')
   }
 
-  // If on login page, render cleanly without navbar
   if (pathname === '/admin/login') {
     return <>{children}</>
   }
@@ -53,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-brand-dark flex flex-col">
       <AdminNav userEmail={userEmail} onSignOut={handleSignOut} />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8 pb-24 md:pb-8 min-w-0">
         {children}
       </main>
     </div>

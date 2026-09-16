@@ -1,5 +1,5 @@
 -- ==============================================================================
--- APEX Detail Studio - Supabase Database Schema (PostgreSQL)
+-- OZER Detail Studio - Supabase Database Schema (PostgreSQL)
 -- Location: Austin, Texas (America/Chicago Timezone)
 -- ==============================================================================
 
@@ -47,10 +47,10 @@ CREATE TABLE IF NOT EXISTS public.addons (
 -- 4. Business Settings Table
 CREATE TABLE IF NOT EXISTS public.business_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    business_name TEXT NOT NULL DEFAULT 'APEX Detail Studio',
+    business_name TEXT NOT NULL DEFAULT 'OZER Detail Studio',
     address TEXT NOT NULL DEFAULT '11723 N FM 620, Austin, TX 78726',
     phone TEXT NOT NULL DEFAULT '(512) 890-2839',
-    email TEXT NOT NULL DEFAULT 'concierge@apexdetailaustin.com',
+    email TEXT NOT NULL DEFAULT 'concierge@ozerdetailaustin.com',
     timezone TEXT NOT NULL DEFAULT 'America/Chicago',
     slot_interval_minutes INTEGER NOT NULL DEFAULT 30 CHECK (slot_interval_minutes IN (15, 30, 45, 60)),
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),

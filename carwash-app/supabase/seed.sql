@@ -1,5 +1,5 @@
 -- ==============================================================================
--- APEX Detail Studio - Seed Data
+-- OZER Detail Studio - Seed Data
 -- ==============================================================================
 
 -- 1. Business Settings
@@ -7,10 +7,10 @@ INSERT INTO public.business_settings (
     id, business_name, address, phone, email, timezone, slot_interval_minutes
 ) VALUES (
     '00000000-0000-0000-0000-000000000001',
-    'APEX Detail Studio',
+    'OZER Detail Studio',
     '11723 N FM 620, Austin, TX 78726',
     '(512) 890-2839',
-    'concierge@apexdetailaustin.com',
+    'concierge@ozerdetailaustin.com',
     'America/Chicago',
     30
 ) ON CONFLICT (id) DO UPDATE SET

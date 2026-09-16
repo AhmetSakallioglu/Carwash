@@ -32,11 +32,11 @@ export function BackgroundOrbs() {
     <>
       <div
         ref={orb1Ref}
-        className="fixed top-10 left-1/4 w-[420px] h-[420px] bg-cyan-500/10 rounded-full blur-[130px] pointer-events-none -z-10 transition-transform duration-300 ease-out"
+        className="fixed top-10 left-1/4 w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] bg-cyan-500/10 rounded-full blur-[130px] pointer-events-none -z-10 transition-transform duration-300 ease-out"
       />
       <div
         ref={orb2Ref}
-        className="fixed bottom-10 right-10 w-[480px] h-[480px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none -z-10 transition-transform duration-300 ease-out"
+        className="fixed bottom-10 right-4 sm:right-10 w-[220px] h-[220px] sm:w-[480px] sm:h-[480px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none -z-10 transition-transform duration-300 ease-out"
       />
     </>
   )

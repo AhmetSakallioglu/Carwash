@@ -49,7 +49,7 @@ export function BeforeAfterSlider() {
   }, [isDragging, handleMove])
 
   return (
-    <section id="comparison" className="py-24 px-6 bg-slate-950/60 scroll-mt-20 overflow-hidden">
+    <section id="comparison" className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-950/60 scroll-mt-24 overflow-hidden">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-xs font-bold uppercase tracking-widest text-brand-cyan mb-2">
@@ -64,7 +64,7 @@ export function BeforeAfterSlider() {
           ref={containerRef}
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}
-          className="relative w-full max-w-4xl mx-auto h-72 sm:h-96 md:h-[480px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800 select-none cursor-ew-resize"
+          className="relative w-full max-w-4xl mx-auto h-56 sm:h-96 md:h-[480px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-800 select-none cursor-ew-resize touch-none"
         >
           {/* Before View (Background) */}
           <div
@@ -75,8 +75,8 @@ export function BeforeAfterSlider() {
             }}
           >
             <div className="absolute inset-0 bg-black/40" />
-            <span className="absolute bottom-6 left-6 z-10 text-xs font-bold tracking-wider px-3 py-1.5 rounded-md bg-black/70 backdrop-blur text-slate-300 border border-white/10">
-              BEFORE (Swirl Marks & Road Film)
+            <span className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 z-10 text-[10px] sm:text-xs font-bold tracking-wider px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 backdrop-blur text-slate-300 border border-white/10">
+              BEFORE
             </span>
           </div>
 
@@ -89,8 +89,8 @@ export function BeforeAfterSlider() {
               clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`,
             }}
           >
-            <span className="absolute bottom-6 right-6 z-10 text-xs font-bold tracking-wider px-3 py-1.5 rounded-md bg-brand-cyan/90 text-black font-semibold">
-              AFTER (Multi-Stage Polish & Coating)
+            <span className="absolute bottom-3 right-3 sm:bottom-6 sm:right-6 z-10 text-[10px] sm:text-xs font-bold tracking-wider px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-brand-cyan/90 text-black font-semibold">
+              AFTER
             </span>
           </div>
 

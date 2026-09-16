@@ -209,7 +209,7 @@ export async function GET(request: NextRequest) {
         success: true,
         date: dateStr,
         isOpen: false,
-        message: 'APEX Studio is closed on this day.',
+        message: 'OZER Studio is closed on this day.',
         totalDurationMinutes: totalDuration,
         slots: [],
       })

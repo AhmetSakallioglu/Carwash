@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 
@@ -16,8 +16,14 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+
 export const metadata: Metadata = {
-  title: "APEX Detail Studio | Austin's Premier Auto Spa & Ceramic Coating",
+  title: "OZER Detail Studio | Austin's Premier Auto Spa & Ceramic Coating",
   description:
     'Precision mobile and studio detailing across Austin, TX. Deep steam extraction, multi-stage paint correction, and certified 9H ceramic coatings. Pay on-site upon vehicle completion.',
   keywords: [
@@ -42,7 +48,7 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakartaSans.variable} ${spaceGrotesk.variable} scroll-smooth dark`}
     >
-      <body className="bg-brand-dark text-slate-200 font-sans antialiased selection:bg-brand-cyan selection:text-black min-h-screen">
+      <body className="bg-brand-dark text-slate-200 font-sans antialiased selection:bg-brand-cyan selection:text-black min-h-screen overflow-x-hidden">
         {children}
       </body>
     </html>

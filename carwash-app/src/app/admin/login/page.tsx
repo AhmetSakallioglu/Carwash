@@ -33,7 +33,7 @@ export default function AdminLoginPage() {
           process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
         ) {
           // Set demo session cookie and proceed
-          document.cookie = 'apex_admin_session=demo_active; path=/; max-age=86400;'
+          document.cookie = 'ozer_admin_session=demo_active; path=/; max-age=86400;'
           router.push('/admin')
           return
         }
@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
       }
     } catch {
       // Fallback for demo mode
-      document.cookie = 'apex_admin_session=demo_active; path=/; max-age=86400;'
+      document.cookie = 'ozer_admin_session=demo_active; path=/; max-age=86400;'
       router.push('/admin')
     } finally {
       setIsLoading(false)
@@ -51,13 +51,13 @@ export default function AdminLoginPage() {
   }
 
   const handleDemoLogin = () => {
-    document.cookie = 'apex_admin_session=demo_active; path=/; max-age=86400;'
+    document.cookie = 'ozer_admin_session=demo_active; path=/; max-age=86400;'
     router.push('/admin')
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-brand-dark">
-      <div className="w-full max-w-md glassmorphism p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-brand-dark">
+      <div className="w-full max-w-md glassmorphism p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
         {/* Header */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-cyan-500/10 text-brand-neon mb-3 border border-brand-cyan/20">
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
           <div className="flex items-center justify-center gap-1.5 mb-1">
             <Sparkles className="w-4 h-4 text-brand-neon" />
             <span className="font-display font-bold text-xl text-white">
-              APEX<span className="text-brand-cyan">.ATX</span>
+              OZER<span className="text-brand-cyan">.ATX</span>
             </span>
           </div>
           <h2 className="font-display text-lg font-bold text-white">Admin Operations Portal</h2>
@@ -88,7 +88,7 @@ export default function AdminLoginPage() {
             <input
               type="email"
               required
-              placeholder="admin@apexdetailaustin.com"
+              placeholder="admin@ozerdetailaustin.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan transition"

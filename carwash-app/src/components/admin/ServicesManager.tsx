@@ -3,7 +3,8 @@
 import React, { useState } from 'react'
 import { Service } from '@/types'
 import { formatCurrency } from '@/lib/utils'
-import { Plus, Edit2, Trash2, Check, Sparkles, X, Loader2 } from 'lucide-react'
+import { saveServiceAction, deleteServiceAction } from '@/app/actions/admin'
+import { Plus, Edit2, Trash2, Check, X, Loader2 } from 'lucide-react'
 
 interface ServicesManagerProps {
   initialServices: Service[]
@@ -60,25 +61,20 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
 
     try {
       const isNew = !currentService.id
-      const url = isNew ? '/api/admin/services' : `/api/admin/services/${currentService.id}`
-      const method = isNew ? 'POST' : 'PUT'
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      const result = await saveServiceAction({
+        ...payload,
+        name: payload.name || '',
       })
 
-      const data = await res.json()
-      if (data.service) {
+      if (result.success && result.data) {
         if (isNew) {
-          setServices([...services, data.service])
+          setServices([...services, result.data])
         } else {
-          setServices(services.map(s => (s.id === data.service.id ? data.service : s)))
+          setServices(services.map(s => (s.id === result.data!.id ? result.data! : s)))
         }
         setIsEditing(false)
       } else {
-        setErrorMessage(data.error || 'Failed to save service')
+        setErrorMessage(result.error || 'Failed to save service')
       }
     } catch {
       setErrorMessage('Connection error')
@@ -91,12 +87,11 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
     if (!confirm('Are you sure you want to delete this service package?')) return
 
     try {
-      const res = await fetch(`/api/admin/services/${id}`, { method: 'DELETE' })
-      const data = await res.json()
-      if (data.success) {
+      const result = await deleteServiceAction(id)
+      if (result.success) {
         setServices(services.filter(s => s.id !== id))
       } else {
-        alert(data.error || 'Failed to delete service')
+        alert(result.error || 'Failed to delete service')
       }
     } catch {
       alert('Error deleting service')
@@ -105,8 +100,8 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="font-display text-xl font-bold text-white">Service Packages</h3>
           <p className="text-xs text-slate-400">
             Define base prices and packages for the Austin booking calculator.
@@ -115,7 +110,7 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
         <button
           onClick={handleOpenNew}
           type="button"
-          className="flex items-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95 w-full sm:w-auto shrink-0"
         >
           <Plus className="w-4 h-4" /> Add Package
         </button>
@@ -197,9 +192,9 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
 
       {/* Edit / Create Modal */}
       {isEditing && currentService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
           <div
-            className="relative w-full max-w-lg glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[92vh]"
+            className="relative w-full sm:max-w-lg glassmorphism bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl overflow-y-auto max-h-[96dvh] sm:max-h-[92vh]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between pb-4 border-b border-slate-800">

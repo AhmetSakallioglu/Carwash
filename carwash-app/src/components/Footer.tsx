@@ -4,9 +4,9 @@ import { Navigation, MapPin, Phone, Mail, Sparkles, ShieldCheck } from 'lucide-r
 
 export function AustinServiceArea() {
   return (
-    <section id="locations" className="py-16 px-6 scroll-mt-20">
-      <div className="max-w-5xl mx-auto glassmorphism p-8 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-        <div className="flex items-center gap-4">
+    <section id="locations" className="py-12 sm:py-16 px-4 sm:px-6 scroll-mt-24">
+      <div className="max-w-5xl mx-auto glassmorphism p-5 sm:p-8 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-xl">
+        <div className="flex items-start sm:items-center gap-4 min-w-0">
           <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 text-brand-cyan flex items-center justify-center shrink-0 border border-cyan-500/20">
             <Navigation className="w-7 h-7" />
           </div>
@@ -19,7 +19,7 @@ export function AustinServiceArea() {
             </p>
           </div>
         </div>
-        <div className="text-xs font-bold text-brand-neon px-5 py-3 rounded-full bg-cyan-500/10 border border-cyan-500/30 whitespace-nowrap shadow-lg shadow-cyan-500/10">
+        <div className="text-xs font-bold text-brand-neon px-4 sm:px-5 py-3 rounded-full bg-cyan-500/10 border border-cyan-500/30 shadow-lg shadow-cyan-500/10 w-full md:w-auto text-center">
           ✓ $0 Travel Fee within 25 Miles
         </div>
       </div>
@@ -29,14 +29,14 @@ export function AustinServiceArea() {
 
 export function Footer() {
   return (
-    <footer className="pt-16 pb-12 px-6 border-t border-slate-900 bg-slate-950/60">
+    <footer className="pt-12 sm:pt-16 pb-10 sm:pb-12 px-4 sm:px-6 border-t border-slate-900 bg-slate-950/60">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
         {/* Col 1: Brand */}
         <div className="md:col-span-2">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-brand-neon" />
             <span className="font-display font-bold text-xl tracking-wider text-white">
-              APEX<span className="text-brand-cyan">.ATX</span>
+              OZER<span className="text-brand-cyan">.ATX</span>
             </span>
           </div>
           <p className="text-slate-400 text-xs leading-relaxed max-w-sm mb-4">
@@ -66,8 +66,8 @@ export function Footer() {
             </li>
             <li className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-brand-cyan shrink-0" />
-              <a href="mailto:concierge@apexdetailaustin.com" className="hover:text-white transition">
-                concierge@apexdetailaustin.com
+              <a href="mailto:concierge@ozerdetailaustin.com" className="hover:text-white transition">
+                concierge@ozerdetailaustin.com
               </a>
             </li>
           </ul>
@@ -103,7 +103,7 @@ export function Footer() {
       </div>
 
       <div className="max-w-6xl mx-auto pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-        <p>© 2026 APEX Detail Studio Austin. All rights reserved.</p>
+        <p>© 2026 OZER Detail Studio Austin. All rights reserved.</p>
         <p>Austin, Texas • Professional Detailing & Ceramic Coatings</p>
       </div>
     </footer>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { VehicleCategory } from '@/types'
+import { saveVehicleCategoryAction, deleteVehicleCategoryAction } from '@/app/actions/admin'
 import { Plus, Edit2, Trash2, X, Loader2, Car } from 'lucide-react'
 
 interface VehiclesManagerProps {
@@ -39,25 +40,20 @@ export function VehiclesManager({ initialCategories }: VehiclesManagerProps) {
 
     try {
       const isNew = !currentCat.id
-      const url = isNew ? '/api/admin/vehicle-categories' : `/api/admin/vehicle-categories/${currentCat.id}`
-      const method = isNew ? 'POST' : 'PUT'
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentCat),
+      const result = await saveVehicleCategoryAction({
+        ...currentCat,
+        label: currentCat.label || '',
       })
 
-      const data = await res.json()
-      if (data.vehicle_category) {
+      if (result.success && result.data) {
         if (isNew) {
-          setCategories([...categories, data.vehicle_category])
+          setCategories([...categories, result.data])
         } else {
-          setCategories(categories.map(c => (c.id === data.vehicle_category.id ? data.vehicle_category : c)))
+          setCategories(categories.map(c => (c.id === result.data!.id ? result.data! : c)))
         }
         setIsEditing(false)
       } else {
-        setErrorMessage(data.error || 'Failed to save vehicle category')
+        setErrorMessage(result.error || 'Failed to save vehicle category')
       }
     } catch {
       setErrorMessage('Connection error')
@@ -70,12 +66,11 @@ export function VehiclesManager({ initialCategories }: VehiclesManagerProps) {
     if (!confirm('Are you sure you want to delete this vehicle category?')) return
 
     try {
-      const res = await fetch(`/api/admin/vehicle-categories/${id}`, { method: 'DELETE' })
-      const data = await res.json()
-      if (data.success) {
+      const result = await deleteVehicleCategoryAction(id)
+      if (result.success) {
         setCategories(categories.filter(c => c.id !== id))
       } else {
-        alert(data.error || 'Failed to delete category')
+        alert(result.error || 'Failed to delete category')
       }
     } catch {
       alert('Error deleting category')
@@ -84,8 +79,8 @@ export function VehiclesManager({ initialCategories }: VehiclesManagerProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="font-display text-xl font-bold text-white">Vehicle Category Multipliers</h3>
           <p className="text-xs text-slate-400">
             Control dynamic vehicle size multipliers applied to base detailing prices.
@@ -94,7 +89,7 @@ export function VehiclesManager({ initialCategories }: VehiclesManagerProps) {
         <button
           onClick={handleOpenNew}
           type="button"
-          className="flex items-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95 w-full sm:w-auto shrink-0"
         >
           <Plus className="w-4 h-4" /> Add Category
         </button>
@@ -155,9 +150,9 @@ export function VehiclesManager({ initialCategories }: VehiclesManagerProps) {
       </div>
 
       {isEditing && currentCat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
           <div
-            className="relative w-full max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl overflow-y-auto"
+            className="relative w-full sm:max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl overflow-y-auto max-h-[96dvh]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between pb-4 border-b border-slate-800">

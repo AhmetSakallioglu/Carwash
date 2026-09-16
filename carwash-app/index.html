@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>APEX Detail Studio | Austin's Premier Auto Spa</title>
+  <title>OZER Detail Studio | Austin's Premier Auto Spa</title>
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,7 +88,7 @@
   <nav class="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-6xl z-40 rounded-full glassmorphism px-6 py-3.5 flex items-center justify-between border border-slate-800/80 shadow-2xl">
     <a href="#" class="flex items-center gap-2 group">
       <i data-lucide="sparkles" class="w-6 h-6 text-brand-neon group-hover:rotate-12 transition duration-300"></i>
-      <span class="font-display font-bold text-xl tracking-wider text-white">APEX<span class="text-brand-cyan">.ATX</span></span>
+      <span class="font-display font-bold text-xl tracking-wider text-white">OZER<span class="text-brand-cyan">.ATX</span></span>
     </a>
     
     <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
@@ -469,7 +469,7 @@
 
   <!-- Footer -->
   <footer class="py-12 px-6 border-t border-slate-900 text-center text-xs text-slate-600">
-    <p>© 2026 APEX Detail Studio Austin. All rights reserved.</p>
+    <p>© 2026 OZER Detail Studio Austin. All rights reserved.</p>
   </footer>
 
   <!-- Master JavaScript Engine -->
@@ -696,7 +696,7 @@
         }
 
         // 2. Anti-Spam Rate Limiting Check (Max 2 bookings per 10 mins from same client)
-        const lastBookingTime = localStorage.getItem('last_apex_booking');
+        const lastBookingTime = localStorage.getItem('last_ozer_booking');
         const now = Date.now();
         if (lastBookingTime && (now - parseInt(lastBookingTime)) < 30000) { // 30 sec cooldown
           formError.textContent = "Please wait a moment before submitting another booking request.";
@@ -728,7 +728,7 @@
         console.log("Ready Payload for Webhook / Zapier:", bookingPayload);
 
         // Store rate-limit timestamp
-        localStorage.setItem('last_apex_booking', now.toString());
+        localStorage.setItem('last_ozer_booking', now.toString());
 
         // UI State -> Success Screen
         document.getElementById('success-phone').textContent = bookingPayload.phone;

@@ -53,7 +53,7 @@ export function AppointmentCalendar({
   })
 
   return (
-    <div className="glassmorphism rounded-2xl border border-slate-800 p-6 shadow-xl">
+    <div className="glassmorphism rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-xl min-w-0">
       {/* Calendar Top Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -96,7 +96,8 @@ export function AppointmentCalendar({
       </div>
 
       {/* Week Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mt-6">
+      <div className="mt-6 -mx-1 overflow-x-auto pb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 min-w-0 lg:min-w-[840px]">
         {weekDays.map((day, idx) => {
           const dayApts = getAppointmentsForDay(day)
           const isToday = day.toDateString() === new Date().toDateString()
@@ -176,6 +177,7 @@ export function AppointmentCalendar({
             </div>
           )
         })}
+        </div>
       </div>
     </div>
   )

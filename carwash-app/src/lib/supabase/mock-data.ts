@@ -2,10 +2,10 @@ import { Service, VehicleCategory, Addon, BusinessSettings, BusinessSchedule, Bl
 
 export const MOCK_BUSINESS_SETTINGS: BusinessSettings = {
   id: '00000000-0000-0000-0000-000000000001',
-  business_name: 'APEX Detail Studio',
+  business_name: 'OZER Detail Studio',
   address: '11723 N FM 620, Austin, TX 78726',
   phone: '(512) 890-2839',
-  email: 'concierge@apexdetailaustin.com',
+  email: 'concierge@ozerdetailaustin.com',
   timezone: 'America/Chicago',
   slot_interval_minutes: 30,
   created_at: new Date().toISOString(),

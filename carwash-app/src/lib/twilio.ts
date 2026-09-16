@@ -33,7 +33,7 @@ function getTwilioClient() {
 export async function sendBookingConfirmedSMS(context: BookingSMSContext): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const twilioConfig = getTwilioClient()
   const to = toE164PhoneNumber(context.customerPhone)
-  const messageBody = `APEX Detail Studio: Hi ${context.customerName}, your detailing appointment [${context.appointmentCode}] for ${context.serviceName} on ${context.dateTimeFormatted} is CONFIRMED! Location: ${context.customerAddress}. Total: $${context.totalPrice} (Pay on-site after service). Need to adjust? Call/text (512) 890-2839.`
+  const messageBody = `OZER Detail Studio: Hi ${context.customerName}, your detailing appointment [${context.appointmentCode}] for ${context.serviceName} on ${context.dateTimeFormatted} is CONFIRMED! Location: ${context.customerAddress}. Total: $${context.totalPrice} (Pay on-site after service). Need to adjust? Call/text (512) 890-2839.`
 
   if (!twilioConfig) {
     console.log(`[Twilio DEV MOCK] SMS to ${to}:\n${messageBody}`)
@@ -61,7 +61,7 @@ export async function sendBookingConfirmedSMS(context: BookingSMSContext): Promi
 export async function sendBookingRescheduledSMS(context: BookingSMSContext): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const twilioConfig = getTwilioClient()
   const to = toE164PhoneNumber(context.customerPhone)
-  const messageBody = `APEX Detail Studio: Hi ${context.customerName}, your appointment [${context.appointmentCode}] has been RESCHEDULED to ${context.dateTimeFormatted}. Location: ${context.customerAddress}. Estimated Total: $${context.totalPrice}. Questions? Call (512) 890-2839.`
+  const messageBody = `OZER Detail Studio: Hi ${context.customerName}, your appointment [${context.appointmentCode}] has been RESCHEDULED to ${context.dateTimeFormatted}. Location: ${context.customerAddress}. Estimated Total: $${context.totalPrice}. Questions? Call (512) 890-2839.`
 
   if (!twilioConfig) {
     console.log(`[Twilio DEV MOCK] Reschedule SMS to ${to}:\n${messageBody}`)
@@ -90,7 +90,7 @@ export async function sendBookingCancelledSMS(context: BookingSMSContext): Promi
   const twilioConfig = getTwilioClient()
   const to = toE164PhoneNumber(context.customerPhone)
   const reasonText = context.cancellationReason ? `Reason: ${context.cancellationReason}.` : ''
-  const messageBody = `APEX Detail Studio: Hi ${context.customerName}, your appointment [${context.appointmentCode}] scheduled for ${context.dateTimeFormatted} has been CANCELLED. ${reasonText} To rebook, visit our website or call (512) 890-2839.`
+  const messageBody = `OZER Detail Studio: Hi ${context.customerName}, your appointment [${context.appointmentCode}] scheduled for ${context.dateTimeFormatted} has been CANCELLED. ${reasonText} To rebook, visit our website or call (512) 890-2839.`
 
   if (!twilioConfig) {
     console.log(`[Twilio DEV MOCK] Cancellation SMS to ${to}:\n${messageBody}`)

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Addon } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { saveAddonAction, deleteAddonAction } from '@/app/actions/admin'
 import { Plus, Edit2, Trash2, X, Loader2, Sparkles } from 'lucide-react'
 
 interface AddonsManagerProps {
@@ -41,25 +42,20 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
 
     try {
       const isNew = !currentAddon.id
-      const url = isNew ? '/api/admin/addons' : `/api/admin/addons/${currentAddon.id}`
-      const method = isNew ? 'POST' : 'PUT'
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentAddon),
+      const result = await saveAddonAction({
+        ...currentAddon,
+        name: currentAddon.name || '',
       })
 
-      const data = await res.json()
-      if (data.addon) {
+      if (result.success && result.data) {
         if (isNew) {
-          setAddons([...addons, data.addon])
+          setAddons([...addons, result.data])
         } else {
-          setAddons(addons.map(a => (a.id === data.addon.id ? data.addon : a)))
+          setAddons(addons.map(a => (a.id === result.data!.id ? result.data! : a)))
         }
         setIsEditing(false)
       } else {
-        setErrorMessage(data.error || 'Failed to save add-on')
+        setErrorMessage(result.error || 'Failed to save add-on')
       }
     } catch {
       setErrorMessage('Connection error')
@@ -72,12 +68,11 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
     if (!confirm('Are you sure you want to delete this add-on?')) return
 
     try {
-      const res = await fetch(`/api/admin/addons/${id}`, { method: 'DELETE' })
-      const data = await res.json()
-      if (data.success) {
+      const result = await deleteAddonAction(id)
+      if (result.success) {
         setAddons(addons.filter(a => a.id !== id))
       } else {
-        alert(data.error || 'Failed to delete add-on')
+        alert(result.error || 'Failed to delete add-on')
       }
     } catch {
       alert('Error deleting add-on')
@@ -86,8 +81,8 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="font-display text-xl font-bold text-white">Add-On Services</h3>
           <p className="text-xs text-slate-400">
             Configure optional upgrade add-ons for the Austin price builder.
@@ -96,7 +91,7 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
         <button
           onClick={handleOpenNew}
           type="button"
-          className="flex items-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-neon hover:bg-cyan-300 text-black font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-cyan-500/10 active:scale-95 w-full sm:w-auto shrink-0"
         >
           <Plus className="w-4 h-4" /> Add Upgrade
         </button>
@@ -155,9 +150,9 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
       </div>
 
       {isEditing && currentAddon && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
           <div
-            className="relative w-full max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl overflow-y-auto"
+            className="relative w-full sm:max-w-md glassmorphism bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl overflow-y-auto max-h-[96dvh]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between pb-4 border-b border-slate-800">

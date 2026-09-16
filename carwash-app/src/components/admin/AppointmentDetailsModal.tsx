@@ -69,9 +69,9 @@ export function AppointmentDetailsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-2xl glassmorphism bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[92vh]"
+        className="relative w-full sm:max-w-2xl glassmorphism bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl overflow-y-auto max-h-[96dvh] sm:max-h-[92vh]"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -227,8 +227,8 @@ export function AppointmentDetailsModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2">
+        <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2 text-xs">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
             {appointment.status !== 'cancelled' && (
               <>
                 <button
@@ -237,7 +237,7 @@ export function AppointmentDetailsModal({
                     onReschedule(appointment)
                   }}
                   type="button"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-brand-cyan" />
                   Reschedule
