@@ -5,6 +5,18 @@ import { Service, VehicleCategory, Addon } from '@/types'
 import { formatCurrency, calculateBookingPrice } from '@/lib/utils'
 import { Check, Sparkles } from 'lucide-react'
 
+function vehicleCategorySubLabel(label: string): string {
+  const normalized = label.toLowerCase()
+  if (normalized.includes('sedan') || normalized.includes('coupe')) return 'Standard'
+  if (normalized.includes('crossover') || normalized.includes('mid-suv') || normalized.includes('mid suv')) {
+    return 'Mid-Size'
+  }
+  if (normalized.includes('truck') || normalized.includes('3-row') || normalized.includes('3 row')) {
+    return 'Full-Size / 3-Row'
+  }
+  return 'Vehicle class'
+}
+
 export interface SelectedConfiguration {
   selectedService: Service
   selectedCategory: VehicleCategory
@@ -135,7 +147,7 @@ export function PricingCalculator({
                     >
                       <div>{cat.label}</div>
                       <div className="text-[10px] font-normal text-brand-neon/80 mt-0.5">
-                        {cat.multiplier === 1 ? '1.0x (Standard)' : `${cat.multiplier}x Multiplier`}
+                        {vehicleCategorySubLabel(cat.label)}
                       </div>
                     </button>
                   )
