@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+import { setDefaultResultOrder } from 'node:dns'
+import type { NextConfig } from 'next'
+
+try {
+  setDefaultResultOrder('ipv4first')
+} catch {
+  // ignore
+}
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  serverExternalPackages: ['@supabase/supabase-js', '@supabase/ssr'],
+}
 
-export default nextConfig;
+export default nextConfig
