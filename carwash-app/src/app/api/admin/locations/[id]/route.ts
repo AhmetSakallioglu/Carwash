@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
-import { MOCK_SERVICES } from '@/lib/supabase/mock-data'
+import { MOCK_LOCATION_ZONES } from '@/lib/supabase/mock-data'
 
 export async function PUT(
   request: NextRequest,
@@ -11,27 +11,29 @@ export async function PUT(
     const body = await request.json()
     const isLiveDb = isSupabaseConfigured()
 
+    const zipCodesArray = body.zip_codes !== undefined
+      ? Array.isArray(body.zip_codes)
+        ? body.zip_codes
+        : typeof body.zip_codes === 'string'
+        ? body.zip_codes.split(',').map((s: string) => s.trim()).filter(Boolean)
+        : []
+      : undefined
+
     const updatePayload = {
-      ...(body.name && { name: body.name }),
-      ...(body.slug && { slug: body.slug }),
-      ...(body.description !== undefined && { description: body.description }),
-      ...(body.features && { features: body.features }),
-      ...(body.base_price !== undefined && { base_price: Number(body.base_price) }),
-      ...(body.duration_minutes !== undefined && { duration_minutes: Number(body.duration_minutes) }),
-      ...(body.discount_percentage !== undefined && {
-        discount_percentage: Math.min(100, Math.max(0, Number(body.discount_percentage) || 0)),
+      ...(body.zone_name && { zone_name: body.zone_name.trim() }),
+      ...(zipCodesArray !== undefined && { zip_codes: zipCodesArray }),
+      ...(body.travel_fee !== undefined && { travel_fee: Math.max(0, Number(body.travel_fee) || 0) }),
+      ...(body.travel_time_minutes !== undefined && {
+        travel_time_minutes: Math.max(0, Number(body.travel_time_minutes) || 0),
       }),
-      ...(body.discount_active !== undefined && { discount_active: Boolean(body.discount_active) }),
-      ...(body.is_featured !== undefined && { is_featured: Boolean(body.is_featured) }),
-      ...(body.is_active !== undefined && { is_active: Boolean(body.is_active) }),
       ...(body.sort_order !== undefined && { sort_order: Number(body.sort_order) }),
-      updated_at: new Date().toISOString(),
+      ...(body.is_active !== undefined && { is_active: Boolean(body.is_active) }),
     }
 
     if (isLiveDb) {
       const supabase = createAdminClient()
       const { data, error } = await supabase
-        .from('services')
+        .from('location_zones')
         .update(updatePayload)
         .eq('id', id)
         .select()
@@ -40,17 +42,17 @@ export async function PUT(
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
-      return NextResponse.json({ service: data })
+      return NextResponse.json({ zone: data })
     }
 
-    const service = MOCK_SERVICES.find(s => s.id === id)
-    if (!service) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 })
+    const zone = MOCK_LOCATION_ZONES.find(z => z.id === id)
+    if (!zone) {
+      return NextResponse.json({ error: 'Location zone not found' }, { status: 404 })
     }
-    Object.assign(service, updatePayload)
-    return NextResponse.json({ service })
+    Object.assign(zone, updatePayload)
+    return NextResponse.json({ zone })
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error updating service'
+    const errorMsg = err instanceof Error ? err.message : 'Error updating location zone'
     return NextResponse.json({ error: errorMsg }, { status: 500 })
   }
 }
@@ -66,7 +68,7 @@ export async function DELETE(
     if (isLiveDb) {
       const supabase = createAdminClient()
       const { error } = await supabase
-        .from('services')
+        .from('location_zones')
         .delete()
         .eq('id', id)
       if (error) {
@@ -75,13 +77,13 @@ export async function DELETE(
       return NextResponse.json({ success: true })
     }
 
-    const idx = MOCK_SERVICES.findIndex(s => s.id === id)
+    const idx = MOCK_LOCATION_ZONES.findIndex(z => z.id === id)
     if (idx !== -1) {
-      MOCK_SERVICES.splice(idx, 1)
+      MOCK_LOCATION_ZONES.splice(idx, 1)
     }
     return NextResponse.json({ success: true })
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error deleting service'
+    const errorMsg = err instanceof Error ? err.message : 'Error deleting location zone'
     return NextResponse.json({ error: errorMsg }, { status: 500 })
   }
 }

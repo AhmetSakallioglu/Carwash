@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Sparkles, ShieldCheck, Lock, Mail, Loader2, AlertCircle } from 'lucide-react'
+import { BrandMark } from '@/components/BrandMark'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -65,12 +66,10 @@ export default function AdminLoginPage() {
           </div>
           <div className="flex items-center justify-center gap-1.5 mb-1">
             <Sparkles className="w-4 h-4 text-brand-neon" />
-            <span className="font-display font-bold text-xl text-white">
-              OZER<span className="text-brand-cyan">.ATX</span>
-            </span>
+            <BrandMark name="Ozer Auto Detailing" className="text-xl" />
           </div>
           <h2 className="font-display text-lg font-bold text-white">Admin Operations Portal</h2>
-          <p className="text-xs text-slate-400 mt-1">Austin Studio Detailing Management</p>
+          <p className="text-xs text-slate-400 mt-1">Mobile Detailing Management</p>
         </div>
 
         {errorMessage && (

@@ -2,13 +2,12 @@
 
 import React from 'react'
 import { Appointment } from '@/types'
-import { formatCurrency, formatDateTimeCT } from '@/lib/utils'
+import { formatCurrency, formatDateTimeCT, formatDurationMinutes } from '@/lib/utils'
 import {
   X,
   Calendar,
   Clock,
   MapPin,
-  Phone,
   User,
   Car,
   CheckCircle2,
@@ -203,6 +202,31 @@ export function AppointmentDetailsModal({
                   ))}
                 </div>
               )}
+
+              {(appointment.location_zone || appointment.travel_fee > 0 || appointment.travel_time_minutes > 0) && (
+                <div className="flex justify-between items-start gap-3">
+                  <span className="text-slate-400">
+                    {appointment.location_zone?.zone_name || 'Travel Zone'}
+                    {appointment.travel_time_minutes > 0
+                      ? ` (${appointment.travel_time_minutes}m buffer)`
+                      : ''}
+                  </span>
+                  <span className="text-brand-neon font-semibold">
+                    {appointment.travel_fee > 0 ? `+${formatCurrency(appointment.travel_fee)}` : '$0'}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center text-slate-400">
+                <span>Reserved calendar block:</span>
+                <span className="text-white font-medium">
+                  {formatDurationMinutes(
+                    Math.round(
+                      (new Date(appointment.end_time).getTime() - new Date(appointment.start_time).getTime()) / 60000
+                    )
+                  )}
+                </span>
+              </div>
 
               <div className="pt-3 border-t border-slate-800 flex justify-between items-center text-sm font-bold">
                 <span className="text-white">Total Amount (Pay on-site):</span>

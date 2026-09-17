@@ -12,6 +12,14 @@ export type Addon = Database['public']['Tables']['addons']['Row']
 export type AddonInsert = Database['public']['Tables']['addons']['Insert']
 export type AddonUpdate = Database['public']['Tables']['addons']['Update']
 
+export type GalleryItem = Database['public']['Tables']['gallery_items']['Row']
+export type GalleryItemInsert = Database['public']['Tables']['gallery_items']['Insert']
+export type GalleryItemUpdate = Database['public']['Tables']['gallery_items']['Update']
+
+export type LocationZone = Database['public']['Tables']['location_zones']['Row']
+export type LocationZoneInsert = Database['public']['Tables']['location_zones']['Insert']
+export type LocationZoneUpdate = Database['public']['Tables']['location_zones']['Update']
+
 export type BusinessSettings = Database['public']['Tables']['business_settings']['Row']
 export type BusinessSettingsUpdate = Database['public']['Tables']['business_settings']['Update']
 
@@ -39,7 +47,10 @@ export interface Appointment {
   vehicle_details: string
   service_id: string
   vehicle_category_id: string
+  location_zone_id?: string | null
   selected_addons: SelectedAddon[]
+  travel_fee: number
+  travel_time_minutes: number
   total_price: number
   start_time: string
   end_time: string
@@ -51,6 +62,7 @@ export interface Appointment {
   // Joined relations
   service?: Service
   vehicle_category?: VehicleCategory
+  location_zone?: LocationZone
 }
 
 export interface TimeSlot {
@@ -65,9 +77,13 @@ export interface BookingSubmissionPayload {
   customer_name: string
   customer_phone: string
   customer_address: string
+  zip_code?: string
   vehicle_details: string
   service_id: string
   vehicle_category_id: string
+  location_zone_id?: string
+  travel_fee?: number
+  travel_time_minutes?: number
   selected_addon_ids: string[]
   start_time: string // ISO string
 }
@@ -84,5 +100,24 @@ export interface SlotsApiResponse {
   isOpen: boolean
   message?: string
   totalDurationMinutes: number
+  travelTimeMinutes?: number
   slots: TimeSlot[]
+}
+
+export interface GoogleReview {
+  author_name: string
+  profile_photo_url: string | null
+  rating: number
+  relative_time_description: string
+  text: string
+}
+
+export interface GoogleReviewsResponse {
+  success: boolean
+  enabled: boolean
+  rating: number | null
+  total_reviews: number | null
+  reviews: GoogleReview[]
+  place_url: string | null
+  error?: string
 }

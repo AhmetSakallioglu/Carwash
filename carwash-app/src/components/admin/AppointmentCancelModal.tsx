@@ -30,7 +30,7 @@ export function AppointmentCancelModal({
     try {
       const result = await updateAppointmentAction(appointment.id, {
         status: 'cancelled',
-        cancellation_reason: reason.trim() || 'Cancelled by studio administrator',
+        cancellation_reason: reason.trim() || 'Cancelled by administrator',
       })
 
       if (result.success) {

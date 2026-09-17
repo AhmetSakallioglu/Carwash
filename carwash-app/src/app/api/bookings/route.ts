@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import {
   MOCK_SERVICES,
   MOCK_VEHICLE_CATEGORIES,
   MOCK_ADDONS,
+  MOCK_LOCATION_ZONES,
   MOCK_APPOINTMENTS,
 } from '@/lib/supabase/mock-data'
 import {
@@ -12,10 +13,34 @@ import {
   formatDateTimeCT,
   generateAppointmentCode,
   calculateBookingPrice,
+  matchLocationZone,
+  OUT_OF_SERVICE_AREA_MESSAGE,
 } from '@/lib/utils'
 import { sendBookingConfirmedSMS } from '@/lib/twilio'
-import { createCalendarEvent } from '@/lib/google-calendar'
-import { BookingSubmissionPayload, SelectedAddon, Appointment } from '@/types'
+import { createCalendarEvent } from '@/lib/calendar'
+import { BookingSubmissionPayload, SelectedAddon, Appointment, LocationZone } from '@/types'
+import { getBusinessSettings } from '@/lib/supabase/queries'
+
+async function loadActiveLocationZones(isLiveDb: boolean): Promise<LocationZone[]> {
+  if (!isLiveDb) return MOCK_LOCATION_ZONES.filter(zone => zone.is_active)
+
+  try {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from('location_zones')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
+    if (error || !data || data.length === 0) {
+      return MOCK_LOCATION_ZONES.filter(zone => zone.is_active)
+    }
+
+    return data as unknown as LocationZone[]
+  } catch {
+    return MOCK_LOCATION_ZONES.filter(zone => zone.is_active)
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,14 +53,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         appointment: {
-          appointment_code: 'APX-SPAM',
+          appointment_code: 'OZER-SPAM',
           customer_name: body.customer_name,
         },
       })
     }
 
     // 2. Input Validations
-    if (!body.customer_name || !body.customer_phone || !body.customer_address || !body.vehicle_details || !body.service_id || !body.vehicle_category_id || !body.start_time) {
+    if (
+      !body.customer_name ||
+      !body.customer_phone ||
+      !body.customer_address ||
+      !body.vehicle_details ||
+      !body.service_id ||
+      !body.vehicle_category_id ||
+      !body.start_time
+    ) {
       return NextResponse.json(
         { success: false, error: 'All booking fields are required.' },
         { status: 400 }
@@ -59,11 +92,29 @@ export async function POST(request: NextRequest) {
     }
 
     const isLiveDb = isSupabaseConfigured()
+    const locationLookup = [body.zip_code, body.customer_address].filter(Boolean).join(' ')
+    const activeZones = await loadActiveLocationZones(isLiveDb)
+    const matchedZone = matchLocationZone(locationLookup, activeZones)
+
+    if (!matchedZone) {
+      return NextResponse.json(
+        { success: false, error: OUT_OF_SERVICE_AREA_MESSAGE },
+        { status: 400 }
+      )
+    }
+
+    // Server-authoritative zone: ignore client-supplied zone_id / travel_fee
     let serviceName = 'Full Auto Detail'
     let serviceBasePrice = 199
     let serviceDuration = 60
+    let serviceDiscountPercentage = 0
+    let serviceDiscountActive = false
     let vehicleMultiplier = 1.0
     let vehicleLabel = 'Sedan / Coupe'
+    let locationZoneName = matchedZone.zone_name
+    let locationTravelFee = Number(matchedZone.travel_fee || 0)
+    let locationTravelTimeMinutes = Number(matchedZone.travel_time_minutes || 0)
+    const resolvedZoneId = matchedZone.id
     const selectedAddonsData: SelectedAddon[] = []
     let totalDuration = 60
 
@@ -81,6 +132,8 @@ export async function POST(request: NextRequest) {
         serviceName = service.name
         serviceBasePrice = Number(service.base_price)
         serviceDuration = service.duration_minutes
+        serviceDiscountPercentage = Number(service.discount_percentage || 0)
+        serviceDiscountActive = Boolean(service.discount_active)
         totalDuration = serviceDuration
       }
 
@@ -121,6 +174,8 @@ export async function POST(request: NextRequest) {
       serviceName = service.name
       serviceBasePrice = service.base_price
       serviceDuration = service.duration_minutes
+      serviceDiscountPercentage = service.discount_percentage || 0
+      serviceDiscountActive = service.discount_active || false
       totalDuration = serviceDuration
 
       const category = MOCK_VEHICLE_CATEGORIES.find(c => c.id === body.vehicle_category_id) || MOCK_VEHICLE_CATEGORIES[0]
@@ -141,9 +196,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Add Travel Time Buffer to Total Booking Block Duration
+    totalDuration += locationTravelTimeMinutes
+
     // 3. Price & End Time Calculations
     const addonPrices = selectedAddonsData.map(a => a.price)
-    const totalPrice = calculateBookingPrice(serviceBasePrice, vehicleMultiplier, addonPrices)
+    const totalPrice = calculateBookingPrice(
+      serviceBasePrice,
+      vehicleMultiplier,
+      addonPrices,
+      locationTravelFee,
+      serviceDiscountPercentage,
+      serviceDiscountActive
+    )
+    const originalPrice = calculateBookingPrice(
+      serviceBasePrice,
+      vehicleMultiplier,
+      addonPrices,
+      locationTravelFee,
+      0,
+      false
+    )
+    const discountSavings = Math.max(0, originalPrice - totalPrice)
     const endTimeDate = new Date(startTimeDate.getTime() + totalDuration * 60000)
     const appointmentCode = generateAppointmentCode()
 
@@ -163,7 +237,10 @@ export async function POST(request: NextRequest) {
             vehicle_details: body.vehicle_details.trim(),
             service_id: body.service_id,
             vehicle_category_id: body.vehicle_category_id,
+            location_zone_id: resolvedZoneId,
             selected_addons: selectedAddonsData,
+            travel_fee: locationTravelFee,
+            travel_time_minutes: locationTravelTimeMinutes,
             total_price: totalPrice,
             start_time: startTimeDate.toISOString(),
             end_time: endTimeDate.toISOString(),
@@ -183,7 +260,10 @@ export async function POST(request: NextRequest) {
             vehicle_details: body.vehicle_details.trim(),
             service_id: body.service_id,
             vehicle_category_id: body.vehicle_category_id,
+            location_zone_id: resolvedZoneId,
             selected_addons: selectedAddonsData,
+            travel_fee: locationTravelFee,
+            travel_time_minutes: locationTravelTimeMinutes,
             total_price: totalPrice,
             start_time: startTimeDate.toISOString(),
             end_time: endTimeDate.toISOString(),
@@ -208,7 +288,10 @@ export async function POST(request: NextRequest) {
           vehicle_details: body.vehicle_details.trim(),
           service_id: body.service_id,
           vehicle_category_id: body.vehicle_category_id,
+          location_zone_id: resolvedZoneId,
           selected_addons: selectedAddonsData,
+          travel_fee: locationTravelFee,
+          travel_time_minutes: locationTravelTimeMinutes,
           total_price: totalPrice,
           start_time: startTimeDate.toISOString(),
           end_time: endTimeDate.toISOString(),
@@ -231,7 +314,10 @@ export async function POST(request: NextRequest) {
         vehicle_details: body.vehicle_details.trim(),
         service_id: body.service_id,
         vehicle_category_id: body.vehicle_category_id,
+        location_zone_id: resolvedZoneId,
         selected_addons: selectedAddonsData,
+        travel_fee: locationTravelFee,
+        travel_time_minutes: locationTravelTimeMinutes,
         total_price: totalPrice,
         start_time: startTimeDate.toISOString(),
         end_time: endTimeDate.toISOString(),
@@ -244,44 +330,66 @@ export async function POST(request: NextRequest) {
       MOCK_APPOINTMENTS.unshift(createdAppointment)
     }
 
+    createdAppointment.location_zone = matchedZone
+    createdAppointment.location_zone_id = resolvedZoneId
+    createdAppointment.travel_fee = locationTravelFee
+    createdAppointment.travel_time_minutes = locationTravelTimeMinutes
+
     const formattedDateTime = formatDateTimeCT(createdAppointment.start_time)
     const addonsSummary = selectedAddonsData.map(a => a.name).join(', ')
 
-    // 4. Sync with Google Calendar (Background / Async)
-    try {
-      const gcalEventId = await createCalendarEvent({
-        appointment: createdAppointment,
-        serviceName,
-        vehicleLabel,
-        addonsSummary,
-      })
+    // Twilio SMS + Google Calendar run after the HTTP response so the client is not blocked.
+    after(async () => {
+      const settings = await getBusinessSettings()
+      const [calendarResult, smsResult] = await Promise.allSettled([
+        (async () => {
+          const gcalEventId = await createCalendarEvent({
+            appointment: createdAppointment,
+            serviceName,
+            vehicleLabel,
+            addonsSummary,
+            zipCode: body.zip_code,
+          })
 
-      if (gcalEventId && isLiveDb) {
-        const supabase = createAdminClient()
-        await supabase
-          .from('appointments')
-          .update({ google_event_id: gcalEventId })
-          .eq('id', createdAppointment.id)
-        createdAppointment.google_event_id = gcalEventId
+          if (gcalEventId && isLiveDb && createdAppointment.id) {
+            try {
+              const supabase = createAdminClient()
+              await supabase
+                .from('appointments')
+                .update({ google_event_id: gcalEventId } as never)
+                .eq('id', createdAppointment.id)
+            } catch (persistErr) {
+              console.error('[Google Calendar ID persist Non-fatal Error]:', persistErr)
+            }
+          }
+
+          return gcalEventId
+        })(),
+        sendBookingConfirmedSMS({
+          customerName: createdAppointment.customer_name,
+          customerPhone: createdAppointment.customer_phone,
+          appointmentCode: createdAppointment.appointment_code,
+          serviceName,
+          dateTimeFormatted: formattedDateTime,
+          customerAddress: createdAppointment.customer_address,
+          totalPrice: createdAppointment.total_price,
+          zoneName: locationZoneName,
+          travelFee: locationTravelFee,
+          travelTimeMinutes: locationTravelTimeMinutes,
+          totalDurationMinutes: totalDuration,
+          discountSavings,
+          businessName: settings.business_name,
+          businessPhone: settings.phone,
+        }),
+      ])
+
+      if (calendarResult.status === 'rejected') {
+        console.error('[Google Calendar Non-fatal Error]:', calendarResult.reason)
       }
-    } catch (gcalErr) {
-      console.error('[Google Calendar Non-fatal Error]:', gcalErr)
-    }
-
-    // 5. Dispatch Twilio Confirmation SMS
-    try {
-      await sendBookingConfirmedSMS({
-        customerName: createdAppointment.customer_name,
-        customerPhone: createdAppointment.customer_phone,
-        appointmentCode: createdAppointment.appointment_code,
-        serviceName,
-        dateTimeFormatted: formattedDateTime,
-        customerAddress: createdAppointment.customer_address,
-        totalPrice: createdAppointment.total_price,
-      })
-    } catch (smsErr) {
-      console.error('[Twilio Non-fatal Error]:', smsErr)
-    }
+      if (smsResult.status === 'rejected') {
+        console.error('[Twilio Non-fatal Error]:', smsResult.reason)
+      }
+    })
 
     return NextResponse.json({
       success: true,

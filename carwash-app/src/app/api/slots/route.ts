@@ -3,11 +3,13 @@ import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import {
   MOCK_SERVICES,
   MOCK_ADDONS,
+  MOCK_LOCATION_ZONES,
   MOCK_SCHEDULES,
   MOCK_BLACKOUTS,
   MOCK_APPOINTMENTS,
 } from '@/lib/supabase/mock-data'
-import { SlotsApiResponse, TimeSlot } from '@/types'
+import { matchLocationZone } from '@/lib/utils'
+import { LocationZone, SlotsApiResponse, TimeSlot } from '@/types'
 
 // Helper: parse "HH:mm:ss" or "HH:mm" into minutes from midnight
 function timeToMinutes(t: string): number {
@@ -39,6 +41,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const dateStr = searchParams.get('date') // "2026-09-17"
     const serviceId = searchParams.get('serviceId')
+    const zipCode = searchParams.get('zip') || searchParams.get('zipCode') || ''
     const addonIdsParam = searchParams.get('addonIds') || ''
     const addonIds = addonIdsParam ? addonIdsParam.split(',').filter(Boolean) : []
 
@@ -59,6 +62,7 @@ export async function GET(request: NextRequest) {
     let closeTimeStr = '18:00:00'
     let slotInterval = 30
     let totalDuration = 60
+    let travelTimeMinutes = 0
     let blackoutList: Array<{ start_datetime: string; end_datetime: string; is_full_day: boolean; title: string }> = []
     let bookedRanges: Array<{ start: number; end: number }> = []
 
@@ -133,7 +137,23 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // 5. Fetch Blackout Dates
+        // 5. Resolve travel buffer from ZIP against location_zones.zip_codes
+        if (zipCode) {
+          let zones: LocationZone[] = MOCK_LOCATION_ZONES
+          const { data: zoneRows } = await supabase.from('location_zones').select('*').eq('is_active', true)
+
+          if (zoneRows && zoneRows.length > 0) {
+            zones = zoneRows as unknown as LocationZone[]
+          }
+
+          const matchedZone = matchLocationZone(zipCode, zones)
+          if (matchedZone) {
+            travelTimeMinutes = Number(matchedZone.travel_time_minutes || 0)
+            totalDuration += travelTimeMinutes
+          }
+        }
+
+        // 6. Fetch Blackout Dates
         const startOfDay = `${dateStr}T00:00:00.000Z`
         const endOfDay = `${dateStr}T23:59:59.999Z`
 
@@ -147,7 +167,7 @@ export async function GET(request: NextRequest) {
           blackoutList = blackouts
         }
 
-        // 6. Fetch Existing Appointments (excluding cancelled)
+        // 7. Fetch Existing Appointments (excluding cancelled)
         const { data: appointments } = await supabase
           .from('appointments')
           .select('start_time, end_time')
@@ -191,6 +211,14 @@ export async function GET(request: NextRequest) {
       const addonsMinutes = selectedAddons.reduce((acc, a) => acc + a.duration_minutes, 0)
       totalDuration += addonsMinutes
 
+      if (zipCode) {
+        const zone = matchLocationZone(zipCode, MOCK_LOCATION_ZONES)
+        if (zone) {
+          travelTimeMinutes = zone.travel_time_minutes
+          totalDuration += travelTimeMinutes
+        }
+      }
+
       blackoutList = MOCK_BLACKOUTS.filter(b => {
         return b.start_datetime.startsWith(dateStr) || b.end_datetime.startsWith(dateStr)
       })
@@ -209,8 +237,9 @@ export async function GET(request: NextRequest) {
         success: true,
         date: dateStr,
         isOpen: false,
-        message: 'OZER Studio is closed on this day.',
+        message: "We're closed on this day.",
         totalDurationMinutes: totalDuration,
+        travelTimeMinutes,
         slots: [],
       })
     }
@@ -223,8 +252,9 @@ export async function GET(request: NextRequest) {
         success: true,
         date: dateStr,
         isOpen: false,
-        message: `Studio is closed for: ${blackout?.title || 'Scheduled Maintenance / Holiday'}`,
+        message: `Closed for: ${blackout?.title || 'Scheduled Maintenance / Holiday'}`,
         totalDurationMinutes: totalDuration,
+        travelTimeMinutes,
         slots: [],
       })
     }
@@ -267,6 +297,7 @@ export async function GET(request: NextRequest) {
       date: dateStr,
       isOpen: true,
       totalDurationMinutes: totalDuration,
+      travelTimeMinutes,
       slots,
     })
   } catch (error: unknown) {

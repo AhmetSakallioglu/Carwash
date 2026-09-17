@@ -11,7 +11,7 @@ export default async function AdminSettingsPage() {
       <div>
         <h1 className="font-display text-xl sm:text-2xl font-bold text-white">Business Settings</h1>
         <p className="text-xs text-slate-400 mt-1">
-          Update studio address, contact info, and time slot intervals.
+          Update contact info, hero stats, Google reviews, and time slot intervals.
         </p>
       </div>
 

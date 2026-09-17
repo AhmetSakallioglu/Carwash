@@ -3,15 +3,20 @@ import {
   MOCK_SERVICES,
   MOCK_VEHICLE_CATEGORIES,
   MOCK_ADDONS,
+  MOCK_GALLERY_ITEMS,
+  MOCK_LOCATION_ZONES,
   MOCK_BUSINESS_SETTINGS,
   MOCK_SCHEDULES,
   MOCK_BLACKOUTS,
   MOCK_APPOINTMENTS,
 } from './mock-data'
+import { normalizeBusinessSettings } from '@/lib/settings'
 import {
   Service,
   VehicleCategory,
   Addon,
+  GalleryItem,
+  LocationZone,
   BusinessSettings,
   BusinessSchedule,
   BlackoutDate,
@@ -106,8 +111,52 @@ export async function getAddons(): Promise<Addon[]> {
   )
 }
 
+export async function getGalleryItems(): Promise<GalleryItem[]> {
+  if (!isSupabaseConfigured()) return MOCK_GALLERY_ITEMS
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('gallery_items')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (error) {
+        console.warn('[getGalleryItems] Supabase error:', error.message)
+        return MOCK_GALLERY_ITEMS
+      }
+      return (data && data.length > 0 ? data : MOCK_GALLERY_ITEMS) as unknown as GalleryItem[]
+    })(),
+    4000,
+    MOCK_GALLERY_ITEMS
+  )
+}
+
+export async function getLocationZones(): Promise<LocationZone[]> {
+  if (!isSupabaseConfigured()) return MOCK_LOCATION_ZONES
+
+  return withTimeout(
+    (async () => {
+      const supabase = createAdminClient()
+      const { data, error } = await supabase
+        .from('location_zones')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (error) {
+        console.warn('[getLocationZones] Supabase error:', error.message)
+        return MOCK_LOCATION_ZONES
+      }
+      return (data && data.length > 0 ? data : MOCK_LOCATION_ZONES) as unknown as LocationZone[]
+    })(),
+    4000,
+    MOCK_LOCATION_ZONES
+  )
+}
+
 export async function getBusinessSettings(): Promise<BusinessSettings> {
-  if (!isSupabaseConfigured()) return MOCK_BUSINESS_SETTINGS
+  if (!isSupabaseConfigured()) return normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS)
 
   return withTimeout(
     (async () => {
@@ -119,12 +168,12 @@ export async function getBusinessSettings(): Promise<BusinessSettings> {
         .single()
 
       if (error || !data) {
-        return MOCK_BUSINESS_SETTINGS
+        return normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS)
       }
-      return data as unknown as BusinessSettings
+      return normalizeBusinessSettings(data as unknown as BusinessSettings)
     })(),
     4000,
-    MOCK_BUSINESS_SETTINGS
+    normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS)
   )
 }
 
@@ -188,7 +237,8 @@ export async function getAppointments(filters?: {
         .select(`
           *,
           service:services(*),
-          vehicle_category:vehicle_categories(*)
+          vehicle_category:vehicle_categories(*),
+          location_zone:location_zones(*)
         `)
         .order('start_time', { ascending: false })
 

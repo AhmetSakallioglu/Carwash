@@ -77,7 +77,7 @@ export function AdminDashboardClient({ initialAppointments }: AdminDashboardClie
         <div>
           <h1 className="font-display text-xl sm:text-2xl font-bold text-white">Appointments & Schedule</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time Austin studio bookings, customer requests, and Google Calendar sync.
+            Real-time Austin mobile bookings, customer requests, and Google Calendar sync.
           </p>
         </div>
 

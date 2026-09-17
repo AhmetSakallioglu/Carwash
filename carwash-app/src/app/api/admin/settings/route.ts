@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_BUSINESS_SETTINGS } from '@/lib/supabase/mock-data'
+import { normalizeBusinessSettings } from '@/lib/settings'
 
 export async function GET() {
   try {
@@ -16,15 +17,15 @@ export async function GET() {
           .single()
 
         if (error && error.code !== 'PGRST116') {
-          return NextResponse.json({ settings: MOCK_BUSINESS_SETTINGS })
+          return NextResponse.json({ settings: normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS) })
         }
-        return NextResponse.json({ settings: data || MOCK_BUSINESS_SETTINGS })
+        return NextResponse.json({ settings: normalizeBusinessSettings(data || MOCK_BUSINESS_SETTINGS) })
       } catch {
-        return NextResponse.json({ settings: MOCK_BUSINESS_SETTINGS })
+        return NextResponse.json({ settings: normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS) })
       }
     }
 
-    return NextResponse.json({ settings: MOCK_BUSINESS_SETTINGS })
+    return NextResponse.json({ settings: normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS) })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error fetching settings'
     return NextResponse.json({ error: errorMsg }, { status: 500 })
@@ -43,6 +44,21 @@ export async function PUT(request: NextRequest) {
       ...(body.email && { email: body.email }),
       ...(body.timezone && { timezone: body.timezone }),
       ...(body.slot_interval_minutes && { slot_interval_minutes: Number(body.slot_interval_minutes) }),
+      ...(body.tagline !== undefined && { tagline: body.tagline }),
+      ...(body.show_google_reviews !== undefined && { show_google_reviews: Boolean(body.show_google_reviews) }),
+      ...(body.google_place_id !== undefined && { google_place_id: body.google_place_id }),
+      ...(body.hero_vehicles_count !== undefined && { hero_vehicles_count: Number(body.hero_vehicles_count) }),
+      ...(body.hero_rating_override !== undefined && {
+        hero_rating_override: body.hero_rating_override === null ? null : Number(body.hero_rating_override),
+      }),
+      ...(body.hero_review_count_override !== undefined && {
+        hero_review_count_override:
+          body.hero_review_count_override === null ? null : Number(body.hero_review_count_override),
+      }),
+      ...(body.hero_stat_3_value !== undefined && { hero_stat_3_value: body.hero_stat_3_value }),
+      ...(body.hero_stat_3_label !== undefined && { hero_stat_3_label: body.hero_stat_3_label }),
+      ...(body.hero_stat_4_value !== undefined && { hero_stat_4_value: body.hero_stat_4_value }),
+      ...(body.hero_stat_4_label !== undefined && { hero_stat_4_label: body.hero_stat_4_label }),
       updated_at: new Date().toISOString(),
     }
 
@@ -57,11 +73,11 @@ export async function PUT(request: NextRequest) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
-      return NextResponse.json({ settings: data })
+      return NextResponse.json({ settings: normalizeBusinessSettings(data) })
     }
 
     Object.assign(MOCK_BUSINESS_SETTINGS, updatePayload)
-    return NextResponse.json({ settings: MOCK_BUSINESS_SETTINGS })
+    return NextResponse.json({ settings: normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS) })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error updating settings'
     return NextResponse.json({ error: errorMsg }, { status: 500 })

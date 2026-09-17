@@ -3,10 +3,13 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { BrandMark } from '@/components/BrandMark'
 import {
   CalendarDays,
   Sparkles,
   Layers,
+  Camera,
+  MapPin,
   Clock,
   Settings,
   ExternalLink,
@@ -22,6 +25,8 @@ interface AdminNavProps {
 const NAV_ITEMS = [
   { label: 'Appointments', shortLabel: 'Bookings', href: '/admin', icon: CalendarDays },
   { label: 'Services', shortLabel: 'Services', href: '/admin/services', icon: Layers },
+  { label: 'Gallery', shortLabel: 'Gallery', href: '/admin/gallery', icon: Camera },
+  { label: 'Locations', shortLabel: 'Zones', href: '/admin/locations', icon: MapPin },
   { label: 'Hours', shortLabel: 'Hours', href: '/admin/schedule', icon: Clock },
   { label: 'Settings', shortLabel: 'Settings', href: '/admin/settings', icon: Settings },
 ] as const
@@ -41,16 +46,14 @@ export function AdminNav({ userEmail, onSignOut }: AdminNavProps) {
           <div className="flex items-center justify-between gap-2 h-14 sm:h-16">
             <Link href="/admin" className="flex items-center gap-1.5 sm:gap-2 group min-w-0">
               <Sparkles className="w-5 h-5 text-brand-neon group-hover:rotate-12 transition duration-300 shrink-0" />
-              <span className="font-display font-bold text-base sm:text-lg text-white truncate">
-                OZER<span className="text-brand-cyan">.ATX</span>
-              </span>
+              <BrandMark name="Ozer Auto Detailing" className="text-base sm:text-lg truncate" />
               <span className="hidden sm:inline-flex items-center gap-1 ml-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-brand-cyan/30 text-[10px] font-semibold text-brand-neon">
                 <ShieldCheck className="w-3 h-3" />
                 Admin
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1 min-w-0">
+            <nav className="hidden lg:flex items-center gap-1 min-w-0">
               {NAV_ITEMS.map(item => {
                 const Icon = item.icon
                 const active = isNavActive(pathname, item.href)
@@ -102,8 +105,9 @@ export function AdminNav({ userEmail, onSignOut }: AdminNavProps) {
         </div>
       </header>
 
-      <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-slate-800 bg-slate-950/95 backdrop-blur-md safe-bottom">
-        <div className="grid grid-cols-4">
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 inset-x-0 z-50 lg:hidden border-t border-slate-800 bg-slate-950/95 backdrop-blur-md safe-bottom overflow-x-auto">
+        <div className="grid grid-cols-6 min-w-[360px]">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon
             const active = isNavActive(pathname, item.href)
@@ -112,12 +116,12 @@ export function AdminNav({ userEmail, onSignOut }: AdminNavProps) {
                 key={item.href}
                 href={item.href}
                 prefetch
-                className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-semibold transition ${
-                  active ? 'text-brand-neon' : 'text-slate-400'
+                className={`flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-semibold transition ${
+                  active ? 'text-brand-neon bg-cyan-500/10' : 'text-slate-400'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? 'text-brand-neon' : ''}`} />
-                <span>{item.shortLabel}</span>
+                <Icon className={`w-4 h-4 ${active ? 'text-brand-neon' : ''}`} />
+                <span className="truncate px-0.5">{item.shortLabel}</span>
               </Link>
             )
           })}

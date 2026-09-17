@@ -23,15 +23,14 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: "OZER Detail Studio | Austin's Premier Auto Spa & Ceramic Coating",
+  title: 'Ozer Auto Detailing | Premium Auto Detailing & Mobile Wash in Austin, TX',
   description:
-    'Precision mobile and studio detailing across Austin, TX. Deep steam extraction, multi-stage paint correction, and certified 9H ceramic coatings. Pay on-site upon vehicle completion.',
+    'Ozer Auto Detailing provides premium auto detailing and mobile wash service across Austin, TX. Book online, we come to you, and you pay on-site upon completion.',
   keywords: [
     'Auto Detailing Austin',
-    'Ceramic Coating Austin TX',
-    'Mobile Car Detailing Austin',
-    'Paint Correction Austin',
-    'Luxury Auto Spa',
+    'Mobile Car Wash Austin',
+    'Mobile Detailing Austin TX',
+    'Ozer Auto Detailing',
   ],
   icons: {
     icon: '/globe.svg',

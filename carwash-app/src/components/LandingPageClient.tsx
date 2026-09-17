@@ -1,24 +1,50 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Service, VehicleCategory, Addon } from '@/types'
+import {
+  Service,
+  VehicleCategory,
+  Addon,
+  GalleryItem,
+  LocationZone,
+  BusinessSettings,
+  BusinessSchedule,
+  GoogleReviewsResponse,
+} from '@/types'
 import { Navbar } from './Navbar'
 import { Hero } from './Hero'
 import { ServicesSection } from './ServicesSection'
 import { BeforeAfterSlider } from './BeforeAfterSlider'
+import { GallerySection } from './GallerySection'
+import { ReviewsSection } from './ReviewsSection'
 import { PricingCalculator, SelectedConfiguration } from './PricingCalculator'
 import { BookingModal } from './BookingModal'
 import { AustinServiceArea, Footer } from './Footer'
 import { BackgroundOrbs } from './BackgroundOrbs'
 import { ScrollProgressBar } from './ScrollProgressBar'
+import { calculateBookingPrice } from '@/lib/utils'
 
 interface LandingPageClientProps {
   services: Service[]
   categories: VehicleCategory[]
   addons: Addon[]
+  galleryItems: GalleryItem[]
+  locationZones: LocationZone[]
+  settings: BusinessSettings
+  schedules: BusinessSchedule[]
+  googleReviews: GoogleReviewsResponse
 }
 
-export function LandingPageClient({ services, categories, addons }: LandingPageClientProps) {
+export function LandingPageClient({
+  services,
+  categories,
+  addons,
+  galleryItems,
+  locationZones,
+  settings,
+  schedules,
+  googleReviews,
+}: LandingPageClientProps) {
   const [selectedServiceId, setSelectedServiceId] = useState<string>(
     services.find(s => s.is_featured)?.id || services[0]?.id || ''
   )
@@ -28,7 +54,6 @@ export function LandingPageClient({ services, categories, addons }: LandingPageC
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([])
   const [isCalculatorHighlighted, setIsCalculatorHighlighted] = useState(false)
 
-  // Booking Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalConfig, setModalConfig] = useState<SelectedConfiguration | null>(null)
 
@@ -58,16 +83,39 @@ export function LandingPageClient({ services, categories, addons }: LandingPageC
     const activeAddons = addons.filter(a => selectedAddonIds.includes(a.id))
 
     if (activeService && activeCategory) {
-      const addonsPrice = activeAddons.reduce((acc, a) => acc + a.price, 0)
-      const totalPrice = Math.round(activeService.base_price * activeCategory.multiplier + addonsPrice)
-      const totalDuration = activeService.duration_minutes + activeAddons.reduce((acc, a) => acc + a.duration_minutes, 0)
+      const addonPrices = activeAddons.map(a => a.price)
+
+      const totalPrice = calculateBookingPrice(
+        activeService.base_price,
+        activeCategory.multiplier,
+        addonPrices,
+        0,
+        activeService.discount_percentage,
+        activeService.discount_active
+      )
+
+      const originalTotal = calculateBookingPrice(
+        activeService.base_price,
+        activeCategory.multiplier,
+        addonPrices,
+        0,
+        0,
+        false
+      )
+
+      const totalDuration =
+        activeService.duration_minutes +
+        activeAddons.reduce((acc, a) => acc + a.duration_minutes, 0)
 
       setModalConfig({
         selectedService: activeService,
         selectedCategory: activeCategory,
         selectedAddons: activeAddons,
+        selectedZone: null,
+        serviceZip: '',
         totalPrice,
         totalDurationMinutes: totalDuration,
+        discountSavings: Math.max(0, originalTotal - totalPrice),
       })
       setIsModalOpen(true)
     }
@@ -78,16 +126,19 @@ export function LandingPageClient({ services, categories, addons }: LandingPageC
       <ScrollProgressBar />
       <BackgroundOrbs />
 
-      <Navbar onOpenBooking={handleNavBookClick} />
+      <Navbar onOpenBooking={handleNavBookClick} settings={settings} />
 
       <main>
-        <Hero />
+        <Hero settings={settings} googleRating={googleReviews.rating} />
         <ServicesSection services={services} onSelectService={handleSelectServiceFromCard} />
         <BeforeAfterSlider />
+        <GallerySection items={galleryItems} businessName={settings.business_name} />
+        <ReviewsSection settings={settings} google={googleReviews} />
         <PricingCalculator
           services={services}
           categories={categories}
           addons={addons}
+          locationZones={locationZones}
           selectedServiceId={selectedServiceId}
           selectedCategoryId={selectedCategoryId}
           selectedAddonIds={selectedAddonIds}
@@ -97,15 +148,16 @@ export function LandingPageClient({ services, categories, addons }: LandingPageC
           onReserve={handleOpenBookingModal}
           isHighlighted={isCalculatorHighlighted}
         />
-        <AustinServiceArea />
+        <AustinServiceArea zones={locationZones} />
       </main>
 
-      <Footer />
+      <Footer settings={settings} schedules={schedules} />
 
       <BookingModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         configuration={modalConfig}
+        locationZones={locationZones}
       />
     </div>
   )

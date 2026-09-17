@@ -18,6 +18,8 @@ export interface Database {
           features: string[]
           base_price: number
           duration_minutes: number
+          discount_percentage: number
+          discount_active: boolean
           is_featured: boolean
           is_active: boolean
           sort_order: number
@@ -32,6 +34,8 @@ export interface Database {
           features?: string[]
           base_price: number
           duration_minutes?: number
+          discount_percentage?: number
+          discount_active?: boolean
           is_featured?: boolean
           is_active?: boolean
           sort_order?: number
@@ -46,6 +50,8 @@ export interface Database {
           features?: string[]
           base_price?: number
           duration_minutes?: number
+          discount_percentage?: number
+          discount_active?: boolean
           is_featured?: boolean
           is_active?: boolean
           sort_order?: number
@@ -108,6 +114,70 @@ export interface Database {
           created_at?: string
         }
       }
+      gallery_items: {
+        Row: {
+          id: string
+          title: string
+          category: string
+          image_url: string
+          before_image_url: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          category: string
+          image_url: string
+          before_image_url?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          category?: string
+          image_url?: string
+          before_image_url?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+      }
+      location_zones: {
+        Row: {
+          id: string
+          zone_name: string
+          zip_codes: string[]
+          travel_fee: number
+          travel_time_minutes: number
+          is_active: boolean
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          zone_name: string
+          zip_codes?: string[]
+          travel_fee?: number
+          travel_time_minutes?: number
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          zone_name?: string
+          zip_codes?: string[]
+          travel_fee?: number
+          travel_time_minutes?: number
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+      }
       business_settings: {
         Row: {
           id: string
@@ -117,6 +187,16 @@ export interface Database {
           email: string
           timezone: string
           slot_interval_minutes: number
+          tagline: string
+          show_google_reviews: boolean
+          google_place_id: string
+          hero_vehicles_count: number
+          hero_rating_override: number | null
+          hero_review_count_override: number | null
+          hero_stat_3_value: string
+          hero_stat_3_label: string
+          hero_stat_4_value: string
+          hero_stat_4_label: string
           created_at: string
           updated_at: string
         }
@@ -128,6 +208,16 @@ export interface Database {
           email?: string
           timezone?: string
           slot_interval_minutes?: number
+          tagline?: string
+          show_google_reviews?: boolean
+          google_place_id?: string
+          hero_vehicles_count?: number
+          hero_rating_override?: number | null
+          hero_review_count_override?: number | null
+          hero_stat_3_value?: string
+          hero_stat_3_label?: string
+          hero_stat_4_value?: string
+          hero_stat_4_label?: string
           created_at?: string
           updated_at?: string
         }
@@ -139,6 +229,16 @@ export interface Database {
           email?: string
           timezone?: string
           slot_interval_minutes?: number
+          tagline?: string
+          show_google_reviews?: boolean
+          google_place_id?: string
+          hero_vehicles_count?: number
+          hero_rating_override?: number | null
+          hero_review_count_override?: number | null
+          hero_stat_3_value?: string
+          hero_stat_3_label?: string
+          hero_stat_4_value?: string
+          hero_stat_4_label?: string
           created_at?: string
           updated_at?: string
         }
@@ -205,7 +305,10 @@ export interface Database {
           vehicle_details: string
           service_id: string
           vehicle_category_id: string
+          location_zone_id: string | null
           selected_addons: Json
+          travel_fee: number
+          travel_time_minutes: number
           total_price: number
           start_time: string
           end_time: string
@@ -224,7 +327,10 @@ export interface Database {
           vehicle_details: string
           service_id: string
           vehicle_category_id: string
+          location_zone_id?: string | null
           selected_addons?: Json
+          travel_fee?: number
+          travel_time_minutes?: number
           total_price: number
           start_time: string
           end_time: string
@@ -243,7 +349,10 @@ export interface Database {
           vehicle_details?: string
           service_id?: string
           vehicle_category_id?: string
+          location_zone_id?: string | null
           selected_addons?: Json
+          travel_fee?: number
+          travel_time_minutes?: number
           total_price?: number
           start_time?: string
           end_time?: string

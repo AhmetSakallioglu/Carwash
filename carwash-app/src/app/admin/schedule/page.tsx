@@ -15,7 +15,7 @@ export default async function AdminSchedulePage() {
       <div>
         <h1 className="font-display text-xl sm:text-2xl font-bold text-white">Hours & Blackout Schedule</h1>
         <p className="text-xs text-slate-400 mt-1">
-          Control when OZER Studio accepts appointments and block off holidays or maintenance days.
+          Control when Ozer Auto Detailing accepts appointments and block off holidays or maintenance days.
         </p>
       </div>
 

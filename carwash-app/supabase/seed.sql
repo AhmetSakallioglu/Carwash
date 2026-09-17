@@ -1,23 +1,25 @@
 -- ==============================================================================
--- OZER Detail Studio - Seed Data
+-- Ozer Auto Detailing - Seed Data
 -- ==============================================================================
 
 -- 1. Business Settings
 INSERT INTO public.business_settings (
-    id, business_name, address, phone, email, timezone, slot_interval_minutes
+    id, business_name, address, phone, email, timezone, slot_interval_minutes, tagline
 ) VALUES (
     '00000000-0000-0000-0000-000000000001',
-    'OZER Detail Studio',
+    'Ozer Auto Detailing',
     '11723 N FM 620, Austin, TX 78726',
     '(512) 890-2839',
     'concierge@ozerdetailaustin.com',
     'America/Chicago',
-    30
+    30,
+    'Premium Auto Detailing & Mobile Wash'
 ) ON CONFLICT (id) DO UPDATE SET
     business_name = EXCLUDED.business_name,
     address = EXCLUDED.address,
     phone = EXCLUDED.phone,
-    email = EXCLUDED.email;
+    email = EXCLUDED.email,
+    tagline = EXCLUDED.tagline;
 
 -- 2. Business Schedules (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
 INSERT INTO public.business_schedules (day_of_week, is_open, open_time, close_time) VALUES
@@ -43,9 +45,9 @@ ON CONFLICT (id) DO UPDATE SET
     multiplier = EXCLUDED.multiplier,
     sort_order = EXCLUDED.sort_order;
 
--- 4. Core Services
+-- 4. Core Services (with promotional discounts)
 INSERT INTO public.services (
-    id, name, slug, description, features, base_price, duration_minutes, is_featured, is_active, sort_order
+    id, name, slug, description, features, base_price, duration_minutes, discount_percentage, discount_active, is_featured, is_active, sort_order
 ) VALUES
     (
         '22222222-2222-2222-2222-222222222201',
@@ -55,6 +57,8 @@ INSERT INTO public.services (
         '["Foam cannon pre-soak", "Wheel barrel iron removal", "60-day hydrophobic sealant", "Streak-free crystal glass", "Tire dressing and rim shine"]'::jsonb,
         99.00,
         60,
+        0,
+        false,
         false,
         true,
         1
@@ -67,6 +71,8 @@ INSERT INTO public.services (
         '["Full cabin steam & sanitation", "Deep carpet hot water extraction", "Leather clean and UV conditioner", "AC vent ozone odor treatment", "All plastics and trim dressed"]'::jsonb,
         159.00,
         90,
+        15,
+        true,
         false,
         true,
         2
@@ -79,6 +85,8 @@ INSERT INTO public.services (
         '["Full cabin steam & sanitation", "Clay bar paint treatment", "Deep carpet hot water extraction", "High-gloss machine glaze seal", "Tire & trim deep rejuvenation"]'::jsonb,
         249.00,
         150,
+        20,
+        true,
         true,
         true,
         3
@@ -91,6 +99,8 @@ INSERT INTO public.services (
         '["2-Stage swirl elimination", "9H Ceramic layer application", "Carfax registration warranty", "Hydrophobic glass coating", "Wheel faces ceramic protected"]'::jsonb,
         799.00,
         240,
+        0,
+        false,
         false,
         true,
         4
@@ -102,6 +112,8 @@ ON CONFLICT (id) DO UPDATE SET
     features = EXCLUDED.features,
     base_price = EXCLUDED.base_price,
     duration_minutes = EXCLUDED.duration_minutes,
+    discount_percentage = EXCLUDED.discount_percentage,
+    discount_active = EXCLUDED.discount_active,
     is_featured = EXCLUDED.is_featured,
     sort_order = EXCLUDED.sort_order;
 
@@ -117,12 +129,122 @@ ON CONFLICT (id) DO UPDATE SET
     duration_minutes = EXCLUDED.duration_minutes,
     sort_order = EXCLUDED.sort_order;
 
--- 6. Sample Blackout Date (e.g. Labor Day holiday)
+-- 6. Location Zones (Austin Area Service Zones with Transit Times & Travel Fees)
+INSERT INTO public.location_zones (id, zone_name, zip_codes, travel_fee, travel_time_minutes, is_active, sort_order) VALUES
+    (
+        '66666666-6666-6666-6666-666666666601',
+        'Central Austin / Downtown',
+        ARRAY['78701', '78702', '78703', '78704', '78705', '78712', '78722', '78751', '78752', '78756', '78757'],
+        0.00,
+        15,
+        true,
+        1
+    ),
+    (
+        '66666666-6666-6666-6666-666666666602',
+        'Round Rock / Cedar Park / Domain',
+        ARRAY['78726', '78727', '78728', '78729', '78750', '78758', '78759', '78613', '78664', '78681', '78717'],
+        0.00,
+        20,
+        true,
+        2
+    ),
+    (
+        '66666666-6666-6666-6666-666666666603',
+        'West Lake / Lakeway',
+        ARRAY['78746', '78733', '78734', '78738', '78735', '78732'],
+        15.00,
+        35,
+        true,
+        3
+    ),
+    (
+        '66666666-6666-6666-6666-666666666604',
+        'Georgetown / Buda / San Marcos',
+        ARRAY['78626', '78628', '78633', '78610', '78640', '78666', '78619'],
+        30.00,
+        60,
+        true,
+        4
+    )
+ON CONFLICT (id) DO UPDATE SET
+    zone_name = EXCLUDED.zone_name,
+    zip_codes = EXCLUDED.zip_codes,
+    travel_fee = EXCLUDED.travel_fee,
+    travel_time_minutes = EXCLUDED.travel_time_minutes,
+    is_active = EXCLUDED.is_active,
+    sort_order = EXCLUDED.sort_order;
+
+-- 7. Gallery Items (Austin Detailing Portfolio)
+INSERT INTO public.gallery_items (id, title, category, image_url, before_image_url, sort_order, is_active) VALUES
+    (
+        '77777777-7777-7777-7777-777777777701',
+        'Porsche 911 GT3 RS 9H Ceramic Matrix Coating',
+        'Ceramic Coating',
+        'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1200&q=80',
+        1,
+        true
+    ),
+    (
+        '77777777-7777-7777-7777-777777777702',
+        'BMW M4 Competition Multi-Stage Swirl Correction',
+        'Paint Correction',
+        'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=1200&q=80',
+        2,
+        true
+    ),
+    (
+        '77777777-7777-7777-7777-777777777703',
+        'Mercedes-AMG G63 Full Interior Steam Restoration',
+        'Interior Reset',
+        'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1200&q=80',
+        NULL,
+        3,
+        true
+    ),
+    (
+        '77777777-7777-7777-7777-777777777704',
+        'Tesla Model S Plaid Hydrophobic Glass & Paint Sealant',
+        'Ceramic Coating',
+        'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80',
+        NULL,
+        4,
+        true
+    ),
+    (
+        '77777777-7777-7777-7777-777777777705',
+        'Corvette Z06 Wet-Look Machine Mirror Glaze',
+        'Paint Correction',
+        'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80',
+        NULL,
+        5,
+        true
+    ),
+    (
+        '77777777-7777-7777-7777-777777777706',
+        'Audi RS6 Avant Signature Two-Bucket Hand Wash',
+        'Signature Wash',
+        'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&w=1200&q=80',
+        NULL,
+        6,
+        true
+    )
+ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    category = EXCLUDED.category,
+    image_url = EXCLUDED.image_url,
+    before_image_url = EXCLUDED.before_image_url,
+    sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- 8. Sample Blackout Date
 INSERT INTO public.blackout_dates (id, title, start_datetime, end_datetime, is_full_day) VALUES
-    ('44444444-4444-4444-4444-444444444401', 'Austin Studio Maintenance Day', '2026-10-15 00:00:00+00', '2026-10-15 23:59:59+00', true)
+    ('44444444-4444-4444-4444-444444444401', 'Mobile Fleet Maintenance Day', '2026-10-15 00:00:00+00', '2026-10-15 23:59:59+00', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 7. Sample Initial Bookings
+-- 9. Sample Initial Bookings (with zone & travel fee)
 INSERT INTO public.appointments (
     id,
     appointment_code,
@@ -132,7 +254,10 @@ INSERT INTO public.appointments (
     vehicle_details,
     service_id,
     vehicle_category_id,
+    location_zone_id,
     selected_addons,
+    travel_fee,
+    travel_time_minutes,
     total_price,
     start_time,
     end_time,
@@ -140,32 +265,38 @@ INSERT INTO public.appointments (
 ) VALUES
     (
         '55555555-5555-5555-5555-555555555501',
-        'APX-9482',
+        'OZER-9482',
         'Marcus Vance',
         '(512) 481-9920',
         '1100 Congress Ave, Austin, TX 78701',
         '2024 Porsche 911 GT3 (Chalk)',
         '22222222-2222-2222-2222-222222222204',
         '11111111-1111-1111-1111-111111111101',
+        '66666666-6666-6666-6666-666666666601',
         '[{"id": "33333333-3333-3333-3333-333333333302", "name": "Engine Bay Detail & Dressing", "price": 75, "duration_minutes": 30}]'::jsonb,
+        0.00,
+        15,
         874.00,
         '2026-09-17 09:00:00-05',
-        '2026-09-17 13:30:00-05',
+        '2026-09-17 13:45:00-05',
         'confirmed'
     ),
     (
         '55555555-5555-5555-5555-555555555502',
-        'APX-3104',
+        'OZER-3104',
         'Sarah Jenkins',
         '(512) 793-1144',
         '3400 Palm Way, Austin, TX 78758 (The Domain)',
         '2023 Tesla Model X Plaid (Midnight Silver)',
         '22222222-2222-2222-2222-222222222203',
         '11111111-1111-1111-1111-111111111103',
+        '66666666-6666-6666-6666-666666666602',
         '[{"id": "33333333-3333-3333-3333-333333333301", "name": "Pet Hair & Odor Neutralizer", "price": 50, "duration_minutes": 30}]'::jsonb,
-        398.60,
+        0.00,
+        20,
+        328.80,
         '2026-09-18 10:00:00-05',
-        '2026-09-18 13:00:00-05',
+        '2026-09-18 13:20:00-05',
         'confirmed'
     )
 ON CONFLICT (id) DO NOTHING;
