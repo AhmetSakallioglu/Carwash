@@ -1,6 +1,8 @@
 import { BusinessSchedule, BusinessSettings } from '@/types'
 import { MOCK_BUSINESS_SETTINGS } from '@/lib/supabase/mock-data'
 
+export const HOMEPAGE_BEFORE_AFTER_CATEGORY = '__homepage_before_after__'
+
 function remapLegacyBrandName(name: string): string {
   const trimmed = name.trim()
   if (!trimmed) return MOCK_BUSINESS_SETTINGS.business_name
@@ -48,10 +50,44 @@ export function normalizeBusinessSettings(
     hero_stat_3_label: source.hero_stat_3_label?.trim() || MOCK_BUSINESS_SETTINGS.hero_stat_3_label,
     hero_stat_4_value: source.hero_stat_4_value?.trim() || MOCK_BUSINESS_SETTINGS.hero_stat_4_value,
     hero_stat_4_label: source.hero_stat_4_label?.trim() || MOCK_BUSINESS_SETTINGS.hero_stat_4_label,
+    show_before_after:
+      source.show_before_after === undefined
+        ? MOCK_BUSINESS_SETTINGS.show_before_after
+        : Boolean(source.show_before_after),
+    before_after_before_image_url:
+      source.before_after_before_image_url?.trim() ||
+      MOCK_BUSINESS_SETTINGS.before_after_before_image_url,
+    before_after_after_image_url:
+      source.before_after_after_image_url?.trim() ||
+      MOCK_BUSINESS_SETTINGS.before_after_after_image_url,
     slot_interval_minutes: toNumber(
       source.slot_interval_minutes,
       MOCK_BUSINESS_SETTINGS.slot_interval_minutes
     ),
+  }
+}
+
+export function businessSettingsHasBeforeAfterColumns(
+  raw?: Record<string, unknown> | null
+): boolean {
+  return typeof raw?.show_before_after === 'boolean'
+}
+
+export function overlayBeforeAfterSettings(
+  settings: BusinessSettings,
+  source?: {
+    is_active?: boolean
+    image_url?: string | null
+    before_image_url?: string | null
+  } | null
+): BusinessSettings {
+  if (!source) return settings
+  return {
+    ...settings,
+    show_before_after: Boolean(source.is_active),
+    before_after_before_image_url:
+      source.before_image_url?.trim() || settings.before_after_before_image_url,
+    before_after_after_image_url: source.image_url?.trim() || settings.before_after_after_image_url,
   }
 }
 

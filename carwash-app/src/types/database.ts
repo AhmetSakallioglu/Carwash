@@ -197,6 +197,9 @@ export interface Database {
           hero_stat_3_label: string
           hero_stat_4_value: string
           hero_stat_4_label: string
+          show_before_after: boolean
+          before_after_before_image_url: string
+          before_after_after_image_url: string
           created_at: string
           updated_at: string
         }
@@ -218,6 +221,9 @@ export interface Database {
           hero_stat_3_label?: string
           hero_stat_4_value?: string
           hero_stat_4_label?: string
+          show_before_after?: boolean
+          before_after_before_image_url?: string
+          before_after_after_image_url?: string
           created_at?: string
           updated_at?: string
         }
@@ -239,6 +245,9 @@ export interface Database {
           hero_stat_3_label?: string
           hero_stat_4_value?: string
           hero_stat_4_label?: string
+          show_before_after?: boolean
+          before_after_before_image_url?: string
+          before_after_after_image_url?: string
           created_at?: string
           updated_at?: string
         }

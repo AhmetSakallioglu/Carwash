@@ -118,12 +118,14 @@ export function Hero({ settings, googleRating }: HeroProps) {
           >
             Calculate Price & Book <ArrowRight className="w-4 h-4" />
           </a>
-          <a
-            href="#comparison"
-            className="w-full sm:w-auto px-8 py-4 glassmorphism text-white font-semibold rounded-xl hover:bg-slate-800/80 transition duration-200 border border-slate-700/60 hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            View Transformation
-          </a>
+          {settings.show_before_after && (
+            <a
+              href="#comparison"
+              className="w-full sm:w-auto px-8 py-4 glassmorphism text-white font-semibold rounded-xl hover:bg-slate-800/80 transition duration-200 border border-slate-700/60 hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              View Transformation
+            </a>
+          )}
         </div>
 
         <div

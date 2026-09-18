@@ -3,7 +3,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { ChevronsLeftRight } from 'lucide-react'
 
-export function BeforeAfterSlider() {
+interface BeforeAfterSliderProps {
+  beforeImageUrl: string
+  afterImageUrl: string
+}
+
+export function BeforeAfterSlider({ beforeImageUrl, afterImageUrl }: BeforeAfterSliderProps) {
   const [sliderPosition, setSliderPosition] = useState(50)
   const [isDragging, setIsDragging] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -69,10 +74,7 @@ export function BeforeAfterSlider() {
           {/* Before View (Background) */}
           <div
             className="absolute inset-0 bg-slate-900 bg-cover bg-center"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1400&q=80')",
-            }}
+            style={{ backgroundImage: `url(${JSON.stringify(beforeImageUrl)})` }}
           >
             <div className="absolute inset-0 bg-black/40" />
             <span className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 z-10 text-[10px] sm:text-xs font-bold tracking-wider px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md bg-black/70 backdrop-blur text-slate-300 border border-white/10">
@@ -84,8 +86,7 @@ export function BeforeAfterSlider() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80')",
+              backgroundImage: `url(${JSON.stringify(afterImageUrl)})`,
               clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`,
             }}
           >

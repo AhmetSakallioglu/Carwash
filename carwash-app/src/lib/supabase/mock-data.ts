@@ -28,6 +28,11 @@ export const MOCK_BUSINESS_SETTINGS: BusinessSettings = {
   hero_stat_3_label: 'Mobile Service',
   hero_stat_4_value: 'Austin, TX',
   hero_stat_4_label: 'Service Area',
+  show_before_after: true,
+  before_after_before_image_url:
+    'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1400&q=80',
+  before_after_after_image_url:
+    'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80',
   created_at: '2026-09-01T12:00:00.000Z',
   updated_at: '2026-09-01T12:00:00.000Z',
 }

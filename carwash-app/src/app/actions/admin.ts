@@ -15,9 +15,10 @@ import {
   MOCK_LOCATION_ZONES,
   MOCK_VEHICLE_CATEGORIES,
   MOCK_ADDONS,
+  MOCK_BUSINESS_SETTINGS,
 } from '@/lib/supabase/mock-data'
 import { formatDateTimeCT } from '@/lib/utils'
-import { normalizeBusinessSettings } from '@/lib/settings'
+import { normalizeBusinessSettings, HOMEPAGE_BEFORE_AFTER_CATEGORY } from '@/lib/settings'
 import { sendBookingRescheduledSMS, sendBookingCancelledSMS } from '@/lib/twilio'
 import { updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
 import {
@@ -583,6 +584,16 @@ export async function saveSettingsAction(payload: Partial<BusinessSettings>): Pr
       hero_stat_3_label: payload.hero_stat_3_label,
       hero_stat_4_value: payload.hero_stat_4_value,
       hero_stat_4_label: payload.hero_stat_4_label,
+      show_before_after:
+        payload.show_before_after === undefined
+          ? MOCK_BUSINESS_SETTINGS.show_before_after
+          : Boolean(payload.show_before_after),
+      before_after_before_image_url:
+        payload.before_after_before_image_url?.trim() ||
+        MOCK_BUSINESS_SETTINGS.before_after_before_image_url,
+      before_after_after_image_url:
+        payload.before_after_after_image_url?.trim() ||
+        MOCK_BUSINESS_SETTINGS.before_after_after_image_url,
       updated_at: new Date().toISOString(),
     }
 
@@ -591,6 +602,63 @@ export async function saveSettingsAction(payload: Partial<BusinessSettings>): Pr
       .upsert(record as never, { onConflict: 'id' })
       .select()
       .single()
+
+    if (error && /show_before_after|before_after_|schema cache/i.test(error.message || '')) {
+      const {
+        show_before_after,
+        before_after_before_image_url,
+        before_after_after_image_url,
+        ...legacyRecord
+      } = record
+
+      const { data: existingComparison } = await supabase
+        .from('gallery_items')
+        .select('id')
+        .eq('category', HOMEPAGE_BEFORE_AFTER_CATEGORY)
+        .limit(1)
+        .maybeSingle()
+
+      const comparisonRecord = {
+        title: 'Homepage Before / After',
+        category: HOMEPAGE_BEFORE_AFTER_CATEGORY,
+        image_url: before_after_after_image_url,
+        before_image_url: before_after_before_image_url,
+        is_active: Boolean(show_before_after),
+        sort_order: 0,
+      }
+
+      const comparisonResult = existingComparison?.id
+        ? await supabase
+            .from('gallery_items')
+            .update(comparisonRecord as never)
+            .eq('id', existingComparison.id)
+        : await supabase.from('gallery_items').insert(comparisonRecord as never)
+
+      if (comparisonResult.error) {
+        return { success: false, error: comparisonResult.error.message }
+      }
+
+      const retry = await supabase
+        .from('business_settings')
+        .upsert(legacyRecord as never, { onConflict: 'id' })
+        .select()
+        .single()
+
+      if (retry.error || !retry.data) {
+        return { success: false, error: retry.error?.message || 'Failed to save settings' }
+      }
+
+      revalidateAdmin()
+      return {
+        success: true,
+        data: normalizeBusinessSettings({
+          ...(retry.data as unknown as BusinessSettings),
+          show_before_after,
+          before_after_before_image_url,
+          before_after_after_image_url,
+        }),
+      }
+    }
 
     if (error || !data) {
       return { success: false, error: error?.message || 'Failed to save settings' }

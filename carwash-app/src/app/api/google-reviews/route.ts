@@ -3,9 +3,10 @@ import { fetchGoogleReviews } from '@/lib/google-reviews'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const data = await fetchGoogleReviews()
+    const placeId = new URL(request.url).searchParams.get('placeId') || undefined
+    const data = await fetchGoogleReviews(placeId)
     return NextResponse.json(data)
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error fetching Google reviews'

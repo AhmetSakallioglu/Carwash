@@ -38,6 +38,7 @@ export async function PUT(request: NextRequest) {
     const isLiveDb = isSupabaseConfigured()
 
     const updatePayload = {
+      ...(body.id && { id: body.id }),
       ...(body.business_name && { business_name: body.business_name }),
       ...(body.address && { address: body.address }),
       ...(body.phone && { phone: body.phone }),
@@ -59,6 +60,13 @@ export async function PUT(request: NextRequest) {
       ...(body.hero_stat_3_label !== undefined && { hero_stat_3_label: body.hero_stat_3_label }),
       ...(body.hero_stat_4_value !== undefined && { hero_stat_4_value: body.hero_stat_4_value }),
       ...(body.hero_stat_4_label !== undefined && { hero_stat_4_label: body.hero_stat_4_label }),
+      ...(body.show_before_after !== undefined && { show_before_after: Boolean(body.show_before_after) }),
+      ...(body.before_after_before_image_url !== undefined && {
+        before_after_before_image_url: body.before_after_before_image_url,
+      }),
+      ...(body.before_after_after_image_url !== undefined && {
+        before_after_after_image_url: body.before_after_after_image_url,
+      }),
       updated_at: new Date().toISOString(),
     }
 

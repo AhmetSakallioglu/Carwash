@@ -131,7 +131,12 @@ export function LandingPageClient({
       <main>
         <Hero settings={settings} googleRating={googleReviews.rating} />
         <ServicesSection services={services} onSelectService={handleSelectServiceFromCard} />
-        <BeforeAfterSlider />
+        {settings.show_before_after && (
+          <BeforeAfterSlider
+            beforeImageUrl={settings.before_after_before_image_url}
+            afterImageUrl={settings.before_after_after_image_url}
+          />
+        )}
         <GallerySection items={galleryItems} businessName={settings.business_name} />
         <ReviewsSection settings={settings} google={googleReviews} />
         <PricingCalculator

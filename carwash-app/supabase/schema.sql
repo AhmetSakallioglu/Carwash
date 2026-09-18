@@ -65,6 +65,9 @@ CREATE TABLE IF NOT EXISTS public.business_settings (
     hero_stat_3_label TEXT NOT NULL DEFAULT 'Mobile Service',
     hero_stat_4_value TEXT NOT NULL DEFAULT 'Austin, TX',
     hero_stat_4_label TEXT NOT NULL DEFAULT 'Service Area',
+    show_before_after BOOLEAN NOT NULL DEFAULT true,
+    before_after_before_image_url TEXT NOT NULL DEFAULT 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1400&q=80',
+    before_after_after_image_url TEXT NOT NULL DEFAULT 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80',
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );

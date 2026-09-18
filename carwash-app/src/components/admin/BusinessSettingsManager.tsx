@@ -3,7 +3,8 @@
 import React, { useState } from 'react'
 import { BusinessSettings } from '@/types'
 import { saveSettingsAction } from '@/app/actions/admin'
-import { Save, Check, Loader2, Building, Phone, Mail, MapPin, Clock, Star, BarChart3 } from 'lucide-react'
+import { Save, Check, Loader2, Building, Phone, Mail, MapPin, Clock, Star, BarChart3, ChevronsLeftRight } from 'lucide-react'
+import { ImageDropzone } from './ImageDropzone'
 
 interface BusinessSettingsManagerProps {
   initialSettings: BusinessSettings
@@ -45,7 +46,7 @@ export function BusinessSettingsManager({ initialSettings }: BusinessSettingsMan
             <Building className="w-5 h-5 text-brand-neon shrink-0" /> Austin Business Settings
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Configure business details, hero metrics, Google reviews, and calendar booking intervals.
+            Configure business details, hero metrics, Google reviews, before/after images, and calendar booking intervals.
           </p>
         </div>
 
@@ -307,6 +308,51 @@ export function BusinessSettingsManager({ initialSettings }: BusinessSettingsMan
               }
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan"
               placeholder="Leave blank to use Google"
+            />
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-slate-800 space-y-4">
+          <h4 className="font-display text-sm font-bold text-white flex items-center gap-2">
+            <ChevronsLeftRight className="w-4 h-4 text-brand-neon" /> Before / After Section
+          </h4>
+          <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div>
+              <span className="block font-semibold text-slate-200">Show on homepage</span>
+              <span className="text-[10px] text-slate-500">
+                Off hides the Unmatched Craftsmanship slider, the Results nav link, and the hero button.
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={Boolean(settings.show_before_after)}
+              onClick={() =>
+                setSettings({ ...settings, show_before_after: !settings.show_before_after })
+              }
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition cursor-pointer ${
+                settings.show_before_after ? 'bg-brand-cyan' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-black transition ${
+                  settings.show_before_after ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ImageDropzone
+              label="Before Image"
+              required
+              value={settings.before_after_before_image_url}
+              onChange={url => setSettings({ ...settings, before_after_before_image_url: url })}
+            />
+            <ImageDropzone
+              label="After Image"
+              required
+              value={settings.before_after_after_image_url}
+              onChange={url => setSettings({ ...settings, before_after_after_image_url: url })}
             />
           </div>
         </div>

@@ -10,7 +10,7 @@ import {
   MOCK_BLACKOUTS,
   MOCK_APPOINTMENTS,
 } from './mock-data'
-import { normalizeBusinessSettings } from '@/lib/settings'
+import { normalizeBusinessSettings, HOMEPAGE_BEFORE_AFTER_CATEGORY, businessSettingsHasBeforeAfterColumns, overlayBeforeAfterSettings } from '@/lib/settings'
 import {
   Service,
   VehicleCategory,
@@ -126,7 +126,8 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
         console.warn('[getGalleryItems] Supabase error:', error.message)
         return MOCK_GALLERY_ITEMS
       }
-      return (data && data.length > 0 ? data : MOCK_GALLERY_ITEMS) as unknown as GalleryItem[]
+      const items = (data && data.length > 0 ? data : MOCK_GALLERY_ITEMS) as unknown as GalleryItem[]
+      return items.filter(item => item.category !== HOMEPAGE_BEFORE_AFTER_CATEGORY)
     })(),
     4000,
     MOCK_GALLERY_ITEMS
@@ -170,7 +171,20 @@ export async function getBusinessSettings(): Promise<BusinessSettings> {
       if (error || !data) {
         return normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS)
       }
-      return normalizeBusinessSettings(data as unknown as BusinessSettings)
+
+      const settings = normalizeBusinessSettings(data as unknown as BusinessSettings)
+      if (businessSettingsHasBeforeAfterColumns(data as Record<string, unknown>)) {
+        return settings
+      }
+
+      const { data: comparisonItem } = await supabase
+        .from('gallery_items')
+        .select('*')
+        .eq('category', HOMEPAGE_BEFORE_AFTER_CATEGORY)
+        .limit(1)
+        .maybeSingle()
+
+      return overlayBeforeAfterSettings(settings, comparisonItem as GalleryItem | null)
     })(),
     4000,
     normalizeBusinessSettings(MOCK_BUSINESS_SETTINGS)

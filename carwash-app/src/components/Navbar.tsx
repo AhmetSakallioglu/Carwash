@@ -30,6 +30,9 @@ export function Navbar({ onOpenBooking, settings }: NavbarProps) {
   }, [menuOpen])
 
   const closeMenu = () => setMenuOpen(false)
+  const navLinks = NAV_LINKS.filter(
+    link => settings.show_before_after || link.href !== '#comparison'
+  )
 
   return (
     <nav className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 w-[94%] sm:w-[92%] max-w-6xl z-40 rounded-2xl sm:rounded-full glassmorphism px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 border border-slate-800/80 shadow-2xl">
@@ -39,7 +42,7 @@ export function Navbar({ onOpenBooking, settings }: NavbarProps) {
       </Link>
 
       <div className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-300">
-        {NAV_LINKS.map(link => (
+        {navLinks.map(link => (
           <a key={link.href} href={link.href} className="hover:text-brand-neon transition">
             {link.label}
           </a>
@@ -70,7 +73,7 @@ export function Navbar({ onOpenBooking, settings }: NavbarProps) {
       {menuOpen && (
         <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 md:hidden glassmorphism rounded-2xl border border-slate-800 p-3 shadow-2xl">
           <div className="flex flex-col">
-            {NAV_LINKS.map(link => (
+            {navLinks.map(link => (
               <a
                 key={link.href}
                 href={link.href}
