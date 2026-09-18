@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { uploadGalleryImageFile } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const denied = await unauthorizedIfNotAdmin()
+  if (denied) return denied
   try {
     const formData = await request.formData()
     const file = formData.get('file')

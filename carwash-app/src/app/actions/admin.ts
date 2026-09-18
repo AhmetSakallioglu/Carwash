@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getAdminUser } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import {
   getAppointments,
@@ -68,6 +69,14 @@ function slugify(name: string) {
     .replace(/(^-|-$)+/g, '')
 }
 
+async function requireAdminAccess(): Promise<ActionResult | null> {
+  const user = await getAdminUser()
+  if (!user) {
+    return { success: false, error: 'Unauthorized' }
+  }
+  return null
+}
+
 // ---------------------------------------------------------------------------
 // Services & Discounts
 // ---------------------------------------------------------------------------
@@ -75,6 +84,8 @@ function slugify(name: string) {
 export async function saveServiceAction(
   payload: Partial<Service> & { name: string }
 ): Promise<ActionResult<Service>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const slug = payload.slug || slugify(payload.name)
     const record = {
@@ -135,6 +146,8 @@ export async function saveServiceAction(
 }
 
 export async function deleteServiceAction(id: string): Promise<ActionResult> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     if (isSupabaseConfigured()) {
       const { error } = await createAdminClient().from('services').delete().eq('id', id)
@@ -157,6 +170,8 @@ export async function deleteServiceAction(id: string): Promise<ActionResult> {
 export async function saveVehicleCategoryAction(
   payload: Partial<VehicleCategory> & { label: string }
 ): Promise<ActionResult<VehicleCategory>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const record = {
       label: payload.label,
@@ -207,6 +222,8 @@ export async function saveVehicleCategoryAction(
 }
 
 export async function deleteVehicleCategoryAction(id: string): Promise<ActionResult> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     if (isSupabaseConfigured()) {
       const { error } = await createAdminClient().from('vehicle_categories').delete().eq('id', id)
@@ -229,6 +246,8 @@ export async function deleteVehicleCategoryAction(id: string): Promise<ActionRes
 export async function saveAddonAction(
   payload: Partial<Addon> & { name: string }
 ): Promise<ActionResult<Addon>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const record = {
       name: payload.name,
@@ -280,6 +299,8 @@ export async function saveAddonAction(
 }
 
 export async function deleteAddonAction(id: string): Promise<ActionResult> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     if (isSupabaseConfigured()) {
       const { error } = await createAdminClient().from('addons').delete().eq('id', id)
@@ -300,6 +321,8 @@ export async function deleteAddonAction(id: string): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 
 export async function loadGalleryItemsAction(): Promise<ActionResult<GalleryItem[]>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const items = await getGalleryItems()
     return { success: true, data: items }
@@ -311,6 +334,8 @@ export async function loadGalleryItemsAction(): Promise<ActionResult<GalleryItem
 export async function saveGalleryItemAction(
   payload: Partial<GalleryItem> & { title: string; image_url: string; category: string }
 ): Promise<ActionResult<GalleryItem>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const record = {
       title: payload.title.trim(),
@@ -363,6 +388,8 @@ export async function saveGalleryItemAction(
 }
 
 export async function deleteGalleryItemAction(id: string): Promise<ActionResult> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     if (isSupabaseConfigured()) {
       const { error } = await createAdminClient().from('gallery_items').delete().eq('id', id)
@@ -382,6 +409,8 @@ export async function reorderGalleryItemAction(
   id: string,
   direction: 'up' | 'down'
 ): Promise<ActionResult<GalleryItem[]>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const items = (await getGalleryItems()).slice().sort((a, b) => a.sort_order - b.sort_order)
     const index = items.findIndex(item => item.id === id)
@@ -427,6 +456,8 @@ export async function reorderGalleryItemAction(
 // ---------------------------------------------------------------------------
 
 export async function loadLocationZonesAction(): Promise<ActionResult<LocationZone[]>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const zones = await getLocationZones()
     return { success: true, data: zones }
@@ -438,6 +469,8 @@ export async function loadLocationZonesAction(): Promise<ActionResult<LocationZo
 export async function saveLocationZoneAction(
   payload: Partial<LocationZone> & { zone_name: string }
 ): Promise<ActionResult<LocationZone>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const zipCodesArray = Array.isArray(payload.zip_codes)
       ? payload.zip_codes
@@ -496,6 +529,8 @@ export async function saveLocationZoneAction(
 }
 
 export async function deleteLocationZoneAction(id: string): Promise<ActionResult> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     if (isSupabaseConfigured()) {
       const { error } = await createAdminClient().from('location_zones').delete().eq('id', id)
@@ -518,6 +553,8 @@ export async function deleteLocationZoneAction(id: string): Promise<ActionResult
 export async function saveSchedulesAction(
   schedules: Array<{ day_of_week: number; is_open: boolean; open_time: string; close_time: string }>
 ): Promise<ActionResult<BusinessSchedule[]>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const supabase = createAdminClient()
     for (const item of schedules) {
@@ -546,6 +583,8 @@ export async function saveSchedulesAction(
 }
 
 export async function saveSettingsAction(payload: Partial<BusinessSettings>): Promise<ActionResult<BusinessSettings>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     if (!isSupabaseConfigured()) {
       return { success: false, error: 'Supabase keys are missing in .env.local' }
@@ -677,6 +716,8 @@ export async function createBlackoutAction(payload: {
   end_datetime: string
   is_full_day: boolean
 }): Promise<ActionResult<BlackoutDate>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const { data, error } = await createAdminClient()
       .from('blackout_dates')
@@ -698,6 +739,8 @@ export async function createBlackoutAction(payload: {
 }
 
 export async function deleteBlackoutAction(id: string): Promise<ActionResult> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const { error } = await createAdminClient().from('blackout_dates').delete().eq('id', id)
     if (error) return { success: false, error: error.message }
@@ -713,6 +756,8 @@ export async function deleteBlackoutAction(id: string): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 
 export async function loadAppointmentsAction(): Promise<ActionResult<Appointment[]>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const appointments = await getAppointments()
     return { success: true, data: appointments }
@@ -725,6 +770,8 @@ export async function updateAppointmentAction(
   id: string,
   body: Partial<Appointment>
 ): Promise<ActionResult<Appointment>> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     const isLiveDb = isSupabaseConfigured()
     let currentAppointment: Appointment | null = null
@@ -832,6 +879,8 @@ export async function updateAppointmentAction(
 }
 
 export async function deleteAppointmentAction(id: string): Promise<ActionResult> {
+  const denied = await requireAdminAccess()
+  if (denied) return denied
   try {
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient()

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_APPOINTMENTS } from '@/lib/supabase/mock-data'
 
 export async function GET(request: NextRequest) {
+  const denied = await unauthorizedIfNotAdmin()
+  if (denied) return denied
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_ADDONS } from '@/lib/supabase/mock-data'
 
@@ -6,6 +7,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await unauthorizedIfNotAdmin()
+  if (denied) return denied
   try {
     const { id } = await params
     const body = await request.json()
@@ -50,6 +53,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await unauthorizedIfNotAdmin()
+  if (denied) return denied
   try {
     const { id } = await params
     const isLiveDb = isSupabaseConfigured()

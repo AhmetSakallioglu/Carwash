@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_SCHEDULES } from '@/lib/supabase/mock-data'
 
 export async function GET() {
+  const denied = await unauthorizedIfNotAdmin()
+  if (denied) return denied
   try {
     const isLiveDb = isSupabaseConfigured()
 
@@ -31,6 +34,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const denied = await unauthorizedIfNotAdmin()
+  if (denied) return denied
   try {
     const body = await request.json()
     const { schedules } = body // Array of { day_of_week, is_open, open_time, close_time }

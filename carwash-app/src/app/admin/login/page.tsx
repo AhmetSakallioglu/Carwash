@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { Sparkles, ShieldCheck, Lock, Mail, Loader2, AlertCircle } from 'lucide-react'
+import { loginAdminAction } from '@/app/actions/admin-auth'
+import { ShieldCheck, Lock, Mail, Loader2, AlertCircle } from 'lucide-react'
 import { BrandMark } from '@/components/BrandMark'
 
 export default function AdminLoginPage() {
@@ -19,57 +19,33 @@ export default function AdminLoginPage() {
     setErrorMessage(null)
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
-
-      if (error) {
-        // If Supabase is not yet configured with users in development, allow demo admin login
-        if (
-          error.message.includes('Invalid login') ||
-          error.message.includes('FetchError') ||
-          !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-          process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
-        ) {
-          // Set demo session cookie and proceed
-          document.cookie = 'ozer_admin_session=demo_active; path=/; max-age=86400;'
-          router.push('/admin')
-          return
-        }
-        setErrorMessage(error.message)
-      } else {
-        router.push('/admin')
+      const result = await loginAdminAction(email.trim(), password)
+      if (!result.success) {
+        setErrorMessage(result.error || 'Invalid email or password.')
+        return
       }
-    } catch {
-      // Fallback for demo mode
-      document.cookie = 'ozer_admin_session=demo_active; path=/; max-age=86400;'
+
       router.push('/admin')
+      router.refresh()
+    } catch {
+      setErrorMessage('Could not sign in. Check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleDemoLogin = () => {
-    document.cookie = 'ozer_admin_session=demo_active; path=/; max-age=86400;'
-    router.push('/admin')
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-brand-dark">
       <div className="w-full max-w-md glassmorphism p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
-        {/* Header */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-cyan-500/10 text-brand-neon mb-3 border border-brand-cyan/20">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div className="flex items-center justify-center gap-1.5 mb-1">
-            <Sparkles className="w-4 h-4 text-brand-neon" />
             <BrandMark name="Ozer Auto Detailing" className="text-xl" />
           </div>
           <h2 className="font-display text-lg font-bold text-white">Admin Operations Portal</h2>
-          <p className="text-xs text-slate-400 mt-1">Mobile Detailing Management</p>
+          <p className="text-xs text-slate-400 mt-1">Sign in with your admin email and password</p>
         </div>
 
         {errorMessage && (
@@ -87,6 +63,7 @@ export default function AdminLoginPage() {
             <input
               type="email"
               required
+              autoComplete="username"
               placeholder="admin@ozerdetailaustin.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -101,6 +78,7 @@ export default function AdminLoginPage() {
             <input
               type="password"
               required
+              autoComplete="current-password"
               placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -123,17 +101,6 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
-
-        {/* Demo Fast Access Button */}
-        <div className="pt-4 border-t border-slate-800 text-center">
-          <button
-            onClick={handleDemoLogin}
-            type="button"
-            className="text-xs text-slate-400 hover:text-brand-neon transition cursor-pointer underline underline-offset-4"
-          >
-            Quick Access / Demo Admin Mode →
-          </button>
-        </div>
       </div>
     </div>
   )

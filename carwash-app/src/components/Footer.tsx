@@ -21,7 +21,8 @@ export function AustinServiceArea({ zones = [] }: { zones?: LocationZone[] }) {
                 Serving Greater Austin & Travis County
               </h3>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Downtown, West Lake Hills, The Domain, Round Rock, Cedar Park, Lakeway, Georgetown, Buda & San Marcos.
+                Mobile car detailing across Austin, TX — Downtown, South Austin, East Austin, The Domain,
+                West Lake Hills, Round Rock, Cedar Park, Lakeway, Georgetown, Pflugerville, Buda, Kyle & San Marcos.
               </p>
             </div>
           </div>
@@ -69,7 +70,8 @@ export function Footer({ settings, schedules = [] }: FooterProps) {
           </div>
           <p className="text-slate-400 text-xs leading-relaxed max-w-sm mb-4">
             {settings.tagline} across Austin, TX. We come to your home or office with a full mobile
-            detailing setup — interior restoration, exterior wash, and paint care without a shop visit.
+            detailing setup — interior restoration, exterior wash, and paint care throughout Greater
+            Austin and Travis County, without a shop visit.
           </p>
           <div className="text-xs text-brand-neon font-medium">
             Pay On-Site — No Upfront Booking Fees
