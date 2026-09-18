@@ -63,7 +63,7 @@ export function GallerySection({ items, businessName = 'Ozer Auto Detailing' }: 
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-4 mb-8 -mx-2 px-2">
+        <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-4 mb-8 -mx-2 px-2 snap-x snap-mandatory">
           {categories.map(cat => {
             const isActive = selectedCategory === cat
             return (
@@ -71,7 +71,7 @@ export function GallerySection({ items, businessName = 'Ozer Auto Detailing' }: 
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap active:scale-95 ${
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap snap-start shrink-0 active:scale-95 ${
                   isActive
                     ? 'bg-brand-cyan text-black shadow-lg shadow-cyan-500/20'
                     : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'

@@ -5,6 +5,7 @@ import { BusinessSettings } from '@/types'
 import { saveSettingsAction } from '@/app/actions/admin'
 import { Save, Check, Loader2, Building, Phone, Mail, MapPin, Clock, Star, BarChart3, ChevronsLeftRight } from 'lucide-react'
 import { ImageDropzone } from './ImageDropzone'
+import { ResponsiveSelect } from '@/components/ResponsiveSelect'
 
 interface BusinessSettingsManagerProps {
   initialSettings: BusinessSettings
@@ -146,18 +147,21 @@ export function BusinessSettingsManager({ initialSettings }: BusinessSettingsMan
             <label className="block font-semibold text-slate-300 mb-1">
               Slot Granularity Interval
             </label>
-            <select
-              value={settings.slot_interval_minutes}
-              onChange={e =>
-                setSettings({ ...settings, slot_interval_minutes: Number(e.target.value) })
+            <ResponsiveSelect
+              value={String(settings.slot_interval_minutes)}
+              onChange={next =>
+                setSettings({ ...settings, slot_interval_minutes: Number(next) })
               }
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan cursor-pointer"
-            >
-              <option value="15">15 Minutes</option>
-              <option value="30">30 Minutes (Recommended)</option>
-              <option value="45">45 Minutes</option>
-              <option value="60">60 Minutes</option>
-            </select>
+              title="Slot Granularity Interval"
+              ariaLabel="Slot granularity interval"
+              triggerClassName="bg-slate-950"
+              options={[
+                { value: '15', label: '15 Minutes' },
+                { value: '30', label: '30 Minutes (Recommended)' },
+                { value: '45', label: '45 Minutes' },
+                { value: '60', label: '60 Minutes' },
+              ]}
+            />
             <span className="text-[10px] text-slate-500 mt-1 block">
               Interval between generated start times
             </span>

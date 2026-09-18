@@ -15,6 +15,7 @@ import {
   Clock,
   Car,
 } from 'lucide-react'
+import { ResponsiveSelect } from '@/components/ResponsiveSelect'
 
 interface AppointmentsListProps {
   appointments: Appointment[]
@@ -140,19 +141,22 @@ export function AppointmentsList({
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-56">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-          <select
+          <ResponsiveSelect
             value={statusFilter}
-            onChange={e => onStatusFilterChange(e.target.value)}
-            className="flex-1 sm:flex-none bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer"
-          >
-            <option value="all">All Statuses</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="pending">Pending</option>
-          </select>
+            onChange={onStatusFilterChange}
+            title="Appointment Status"
+            ariaLabel="Filter appointments by status"
+            triggerClassName="bg-slate-900 border-slate-800 text-sm sm:text-xs"
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'confirmed', label: 'Confirmed' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'cancelled', label: 'Cancelled' },
+              { value: 'pending', label: 'Pending' },
+            ]}
+          />
         </div>
       </div>
 

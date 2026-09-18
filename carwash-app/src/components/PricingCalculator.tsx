@@ -14,6 +14,7 @@ import {
 } from '@/lib/utils'
 import { Check, Sparkles, MapPin, Tag } from 'lucide-react'
 import { vehicleCategorySizeHint } from '@/lib/settings'
+import { ResponsiveSelect } from './ResponsiveSelect'
 
 export interface SelectedConfiguration {
   selectedService: Service
@@ -208,7 +209,7 @@ export function PricingCalculator({
 
             {/* 2: Core Service Package */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   2. Core Service Package
                 </label>
@@ -219,24 +220,26 @@ export function PricingCalculator({
                 )}
               </div>
 
-              <select
+              <ResponsiveSelect
                 value={currentService?.id || ''}
-                onChange={e => onSelectServiceId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer"
-              >
-                {activeServices.map(svc => {
+                onChange={onSelectServiceId}
+                title="Core Service Package"
+                ariaLabel="Core service package"
+                options={activeServices.map(svc => {
                   const isDisc = hasActiveDiscount(svc.discount_percentage, svc.discount_active)
                   const effBase = isDisc
                     ? calculateDiscountedBasePrice(svc.base_price, svc.discount_percentage, true)
                     : svc.base_price
 
-                  return (
-                    <option key={svc.id} value={svc.id}>
-                      {svc.name} — {formatCurrency(effBase)} {isDisc ? `(Special Promo: ${svc.discount_percentage}% OFF - orig. ${formatCurrency(svc.base_price)})` : 'Base'}, ~{svc.duration_minutes} min
-                    </option>
-                  )
+                  return {
+                    value: svc.id,
+                    label: `${svc.name} — ${formatCurrency(effBase)}`,
+                    description: isDisc
+                      ? `${svc.discount_percentage}% off (was ${formatCurrency(svc.base_price)}) · ~${svc.duration_minutes} min`
+                      : `Base price · ~${svc.duration_minutes} min`,
+                  }
                 })}
-              </select>
+              />
 
               {hasDiscount && (
                 <div className="mt-2 p-2.5 rounded-xl bg-cyan-500/10 border border-brand-cyan/30 flex items-center justify-between text-xs text-brand-neon">

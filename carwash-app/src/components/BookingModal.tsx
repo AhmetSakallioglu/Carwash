@@ -14,6 +14,7 @@ import {
   composeServiceAddress,
   OUT_OF_SERVICE_AREA_MESSAGE,
 } from '@/lib/utils'
+import Link from 'next/link'
 import { X, Calendar, CheckCircle2, AlertCircle, Loader2, CheckCheck, MapPin, Tag } from 'lucide-react'
 import { DatePickerCalendar, toISODate } from './DatePickerCalendar'
 import { vehicleCategorySizeHint } from '@/lib/settings'
@@ -634,6 +635,16 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
                   </>
                 )}
               </button>
+
+              <p className="text-xs text-slate-400 leading-relaxed pt-1">
+                By providing your phone number, you agree to receive transactional
+                appointment updates and notifications via SMS from Ozer Auto Detailing.
+                Message and data rates may apply. Reply STOP to cancel anytime. Review our{' '}
+                <Link href="/privacy-policy" className="text-brand-neon underline underline-offset-2 hover:text-cyan-300">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
             </form>
           </div>
         )}

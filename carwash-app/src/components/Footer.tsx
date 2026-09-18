@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 import { Navigation, MapPin, Phone, Mail, Sparkles } from 'lucide-react'
 import { BusinessSchedule, BusinessSettings, LocationZone } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -138,6 +139,11 @@ export function Footer({ settings, schedules = [] }: FooterProps) {
         <p>
           © {year} {settings.business_name}. All rights reserved.
         </p>
+        <nav aria-label="Legal">
+          <Link href="/privacy-policy" className="hover:text-white transition">
+            Privacy Policy
+          </Link>
+        </nav>
         <p>Austin, Texas • {settings.tagline}</p>
       </div>
     </footer>

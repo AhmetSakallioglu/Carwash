@@ -5,6 +5,7 @@ import { BlackoutDate } from '@/types'
 import { formatDateTimeCT } from '@/lib/utils'
 import { createBlackoutAction, deleteBlackoutAction } from '@/app/actions/admin'
 import { Plus, Trash2, CalendarOff, X, Loader2, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
+import { ResponsiveSelect } from '@/components/ResponsiveSelect'
 
 interface BlackoutManagerProps {
   initialBlackouts: BlackoutDate[]
@@ -394,31 +395,25 @@ export function BlackoutManager({ initialBlackouts }: BlackoutManagerProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1">Starts at</label>
-                    <select
+                    <ResponsiveSelect
                       value={startTime}
-                      onChange={e => setStartTime(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan cursor-pointer"
-                    >
-                      {TIME_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setStartTime}
+                      title="Starts at"
+                      ariaLabel="Block start time"
+                      triggerClassName="bg-slate-950"
+                      options={TIME_OPTIONS}
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1">Ends at</label>
-                    <select
+                    <ResponsiveSelect
                       value={endTime}
-                      onChange={e => setEndTime(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan cursor-pointer"
-                    >
-                      {TIME_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setEndTime}
+                      title="Ends at"
+                      ariaLabel="Block end time"
+                      triggerClassName="bg-slate-950"
+                      options={TIME_OPTIONS}
+                    />
                   </div>
                 </div>
               )}
