@@ -35,28 +35,29 @@ ON CONFLICT (day_of_week) DO UPDATE SET
     open_time = EXCLUDED.open_time,
     close_time = EXCLUDED.close_time;
 
--- 3. Vehicle Categories & Multipliers
-INSERT INTO public.vehicle_categories (id, label, multiplier, is_active, sort_order) VALUES
-    ('11111111-1111-1111-1111-111111111101', 'Sedan / Coupe', 1.00, true, 1),
-    ('11111111-1111-1111-1111-111111111102', 'Mid-SUV / Crossover', 1.20, true, 2),
-    ('11111111-1111-1111-1111-111111111103', 'Truck / 3-Row SUV', 1.40, true, 3)
+-- 3. Vehicle Sizes (no multipliers — prices live on each package matrix)
+INSERT INTO public.vehicle_categories (id, label, size_key, is_active, sort_order) VALUES
+    ('11111111-1111-1111-1111-111111111101', 'Sedan / Coupe', 'sedan', true, 1),
+    ('11111111-1111-1111-1111-111111111102', 'SUV / Crossover', 'suv', true, 2),
+    ('11111111-1111-1111-1111-111111111103', 'Truck / Large SUV / Van', 'truck', true, 3)
 ON CONFLICT (id) DO UPDATE SET
     label = EXCLUDED.label,
-    multiplier = EXCLUDED.multiplier,
+    size_key = EXCLUDED.size_key,
     sort_order = EXCLUDED.sort_order;
 
--- 4. Core Services (with promotional discounts)
+-- 4. Core Packages with independent price + duration per vehicle size
 INSERT INTO public.services (
-    id, name, slug, description, features, base_price, duration_minutes, discount_percentage, discount_active, is_featured, is_active, sort_order
+    id, name, slug, description, features, base_price, duration_minutes, pricing_matrix, discount_percentage, discount_active, is_featured, is_active, sort_order
 ) VALUES
     (
         '22222222-2222-2222-2222-222222222201',
-        'Exterior Signature Hand Wash',
-        'signature-hand-wash',
-        '2-bucket hand wash, wheel barrel decontamination, synthetic paint sealant, and crystal-clear glass.',
-        '["Foam cannon pre-soak", "Wheel barrel iron removal", "60-day hydrophobic sealant", "Streak-free crystal glass", "Tire dressing and rim shine"]'::jsonb,
-        99.00,
-        60,
+        'Interior Detail',
+        'interior-detail',
+        'Full cabin steam extraction, leather conditioning, deep carpet shampoo, and antimicrobial sanitation.',
+        '["Full cabin steam & sanitation", "Deep carpet hot water extraction", "Leather clean and UV conditioner", "AC vent ozone odor treatment", "All plastics and trim dressed"]'::jsonb,
+        159.00,
+        90,
+        '{"sedan":{"price":159,"durationMinutes":90},"suv":{"price":189,"durationMinutes":110},"truck":{"price":219,"durationMinutes":130}}'::jsonb,
         0,
         false,
         false,
@@ -65,43 +66,46 @@ INSERT INTO public.services (
     ),
     (
         '22222222-2222-2222-2222-222222222202',
-        'Interior Deep Steam Restoration',
-        'interior-deep-steam',
-        'Full cabin steam extraction, leather conditioning, deep carpet shampoo, and antimicrobial sanitation.',
-        '["Full cabin steam & sanitation", "Deep carpet hot water extraction", "Leather clean and UV conditioner", "AC vent ozone odor treatment", "All plastics and trim dressed"]'::jsonb,
-        159.00,
-        90,
-        15,
-        true,
+        'Exterior Detail',
+        'exterior-detail',
+        '2-bucket hand wash, wheel barrel decontamination, synthetic paint sealant, and crystal-clear glass.',
+        '["Foam cannon pre-soak", "Wheel barrel iron removal", "60-day hydrophobic sealant", "Streak-free crystal glass", "Tire dressing and rim shine"]'::jsonb,
+        99.00,
+        60,
+        '{"sedan":{"price":99,"durationMinutes":60},"suv":{"price":129,"durationMinutes":75},"truck":{"price":149,"durationMinutes":90}}'::jsonb,
+        0,
+        false,
         false,
         true,
         2
     ),
     (
         '22222222-2222-2222-2222-222222222203',
-        'Full Complete Reset (In & Out)',
-        'full-complete-reset',
-        'Steam extraction, leather conditioning, clay bar decontam, and multi-layer high-gloss machine glaze.',
-        '["Full cabin steam & sanitation", "Clay bar paint treatment", "Deep carpet hot water extraction", "High-gloss machine glaze seal", "Tire & trim deep rejuvenation"]'::jsonb,
-        249.00,
-        150,
-        20,
-        true,
-        true,
+        'Basic Detail',
+        'basic-detail',
+        'Interior wipe-down plus exterior wash and protection — a complete refresh without the full restoration.',
+        '["Exterior hand wash & dry", "Interior vacuum and wipe-down", "Windows in and out", "Tire dressing", "Light stain treatment"]'::jsonb,
+        199.00,
+        120,
+        '{"sedan":{"price":199,"durationMinutes":120},"suv":{"price":239,"durationMinutes":150},"truck":{"price":279,"durationMinutes":180}}'::jsonb,
+        0,
+        false,
+        false,
         true,
         3
     ),
     (
         '22222222-2222-2222-2222-222222222204',
-        'Ceramic Coating & Paint Correction',
-        'ceramic-coating-correction',
-        'Multi-stage machine paint correction eliminating swirls, topped with certified 3 to 5-year 9H ceramic matrix.',
-        '["2-Stage swirl elimination", "9H Ceramic layer application", "Carfax registration warranty", "Hydrophobic glass coating", "Wheel faces ceramic protected"]'::jsonb,
-        799.00,
-        240,
+        'Full Detail',
+        'full-detail',
+        'Steam extraction, leather conditioning, clay bar decontam, and multi-layer high-gloss machine glaze.',
+        '["Full cabin steam & sanitation", "Clay bar paint treatment", "Deep carpet hot water extraction", "High-gloss machine glaze seal", "Tire & trim deep rejuvenation"]'::jsonb,
+        249.00,
+        150,
+        '{"sedan":{"price":249,"durationMinutes":150},"suv":{"price":299,"durationMinutes":180},"truck":{"price":349,"durationMinutes":210}}'::jsonb,
         0,
         false,
-        false,
+        true,
         true,
         4
     )
@@ -112,6 +116,7 @@ ON CONFLICT (id) DO UPDATE SET
     features = EXCLUDED.features,
     base_price = EXCLUDED.base_price,
     duration_minutes = EXCLUDED.duration_minutes,
+    pricing_matrix = EXCLUDED.pricing_matrix,
     discount_percentage = EXCLUDED.discount_percentage,
     discount_active = EXCLUDED.discount_active,
     is_featured = EXCLUDED.is_featured,

@@ -3,6 +3,7 @@ import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_VEHICLE_CATEGORIES } from '@/lib/supabase/mock-data'
 import { VehicleCategory } from '@/types'
+import { hydrateVehicleCategory, resolveVehicleSizeKey } from '@/lib/catalog'
 
 export async function GET() {
   const denied = await unauthorizedIfNotAdmin()
@@ -21,7 +22,9 @@ export async function GET() {
         if (error || !data || data.length === 0) {
           return NextResponse.json({ vehicle_categories: MOCK_VEHICLE_CATEGORIES })
         }
-        return NextResponse.json({ vehicle_categories: data })
+        return NextResponse.json({
+          vehicle_categories: data.map(row => hydrateVehicleCategory(row as unknown as VehicleCategory)),
+        })
       } catch {
         return NextResponse.json({ vehicle_categories: MOCK_VEHICLE_CATEGORIES })
       }
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
         .from('vehicle_categories')
         .insert({
           label: body.label,
-          multiplier: Number(body.multiplier),
+          size_key: resolveVehicleSizeKey(body),
           is_active: body.is_active !== undefined ? Boolean(body.is_active) : true,
           sort_order: Number(body.sort_order) || 0,
         })
@@ -57,17 +60,17 @@ export async function POST(request: NextRequest) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
-      return NextResponse.json({ vehicle_category: data })
+      return NextResponse.json({ vehicle_category: hydrateVehicleCategory(data as unknown as VehicleCategory) })
     }
 
-    const newCat: VehicleCategory = {
+    const newCat = hydrateVehicleCategory({
       id: `mock_cat_${Date.now()}`,
       label: body.label,
-      multiplier: Number(body.multiplier),
+      size_key: resolveVehicleSizeKey(body),
       is_active: Boolean(body.is_active ?? true),
       sort_order: Number(body.sort_order) || 0,
       created_at: new Date().toISOString(),
-    }
+    })
     MOCK_VEHICLE_CATEGORIES.push(newCat)
     return NextResponse.json({ vehicle_category: newCat })
   } catch (err: unknown) {

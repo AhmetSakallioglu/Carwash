@@ -21,7 +21,7 @@ export function AdminServicesClient({ services, categories, addons }: AdminServi
       <div>
         <h1 className="font-display text-xl sm:text-2xl font-bold text-white">Services & Pricing Engine</h1>
         <p className="text-xs text-slate-400 mt-1">
-          Dynamically manage packages, vehicle category multipliers, and add-on pricing.
+          Manage packages, independent size pricing, and add-on rates.
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export function AdminServicesClient({ services, categories, addons }: AdminServi
         >
           <Car className="w-4 h-4" />
           <span className="sm:hidden">Vehicles</span>
-          <span className="hidden sm:inline">Vehicle Multipliers ({categories.length})</span>
+          <span className="hidden sm:inline">Vehicle Sizes ({categories.length})</span>
         </button>
 
         <button

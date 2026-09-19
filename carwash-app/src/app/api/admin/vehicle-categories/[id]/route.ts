@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_VEHICLE_CATEGORIES } from '@/lib/supabase/mock-data'
+import { VehicleCategory } from '@/types'
+import { hydrateVehicleCategory, resolveVehicleSizeKey } from '@/lib/catalog'
 
 export async function PUT(
   request: NextRequest,
@@ -16,7 +18,9 @@ export async function PUT(
 
     const updatePayload = {
       ...(body.label && { label: body.label }),
-      ...(body.multiplier !== undefined && { multiplier: Number(body.multiplier) }),
+      ...(body.size_key !== undefined || body.label
+        ? { size_key: resolveVehicleSizeKey(body) }
+        : {}),
       ...(body.is_active !== undefined && { is_active: Boolean(body.is_active) }),
       ...(body.sort_order !== undefined && { sort_order: Number(body.sort_order) }),
     }
@@ -33,14 +37,14 @@ export async function PUT(
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
-      return NextResponse.json({ vehicle_category: data })
+      return NextResponse.json({ vehicle_category: hydrateVehicleCategory(data as unknown as VehicleCategory) })
     }
 
     const cat = MOCK_VEHICLE_CATEGORIES.find(c => c.id === id)
     if (!cat) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
-    Object.assign(cat, updatePayload)
+    Object.assign(cat, hydrateVehicleCategory({ ...cat, ...updatePayload }))
     return NextResponse.json({ vehicle_category: cat })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error updating category'

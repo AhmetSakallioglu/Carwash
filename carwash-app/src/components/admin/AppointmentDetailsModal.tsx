@@ -3,6 +3,7 @@
 import React from 'react'
 import { Appointment } from '@/types'
 import { formatCurrency, formatDateTimeCT, formatDurationMinutes } from '@/lib/utils'
+import { getPackageSizeRate } from '@/lib/catalog'
 import {
   X,
   Calendar,
@@ -165,12 +166,16 @@ export function AppointmentDetailsModal({
               </div>
             </div>
 
-            {appointment.google_event_id && (
-              <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Google Calendar Sync:</span>
-                <span className="text-emerald-400 font-medium">✓ Synced ({appointment.google_event_id.slice(0, 14)}...)</span>
-              </div>
-            )}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Google Calendar Sync:</span>
+              {appointment.google_event_id && !appointment.google_event_id.startsWith('mock_') ? (
+                <span className="text-emerald-400 font-medium">
+                  ✓ Synced ({appointment.google_event_id.slice(0, 14)}...)
+                </span>
+              ) : (
+                <span className="text-amber-300 font-medium">Not synced</span>
+              )}
+            </div>
           </div>
 
           {/* Section 3: Service & Pricing Breakdown */}
@@ -185,7 +190,9 @@ export function AppointmentDetailsModal({
                   {appointment.service?.name || 'Selected Detailing Package'}
                 </span>
                 <span className="text-slate-300">
-                  {appointment.service?.base_price ? formatCurrency(appointment.service.base_price) : ''}
+                  {appointment.service
+                    ? formatCurrency(getPackageSizeRate(appointment.service, appointment.vehicle_category).price)
+                    : ''}
                 </span>
               </div>
 

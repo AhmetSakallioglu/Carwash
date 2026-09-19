@@ -143,25 +143,18 @@ export function groupScheduleHours(
   }))
 }
 
-export function vehicleCategorySizeHint(label: string): string {
+export function vehicleCategorySizeHint(label: string, sizeKey?: string | null): string {
+  if (sizeKey === 'sedan') return 'Cars & 2-door'
+  if (sizeKey === 'suv') return 'Crossovers & mid-size SUVs'
+  if (sizeKey === 'truck') return 'Trucks, 3-row SUVs & vans'
+
   const normalized = label.toLowerCase()
-  if (normalized.includes('sedan') || normalized.includes('coupe')) return 'Standard'
-  if (
-    normalized.includes('crossover') ||
-    normalized.includes('mid-suv') ||
-    normalized.includes('mid suv') ||
-    normalized.includes('mid-size')
-  ) {
-    return 'Mid-Size'
+  if (normalized.includes('sedan') || normalized.includes('coupe')) return 'Cars & 2-door'
+  if (normalized.includes('crossover') || normalized.includes('suv')) {
+    return 'Crossovers & mid-size SUVs'
   }
-  if (
-    normalized.includes('truck') ||
-    normalized.includes('3-row') ||
-    normalized.includes('3 row') ||
-    normalized.includes('full-size') ||
-    normalized.includes('full size')
-  ) {
-    return 'Full-Size'
+  if (normalized.includes('truck') || normalized.includes('van') || normalized.includes('3-row')) {
+    return 'Trucks, 3-row SUVs & vans'
   }
   return 'Vehicle class'
 }

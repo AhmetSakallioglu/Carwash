@@ -65,9 +65,12 @@ export function AdminDashboardClient({ initialAppointments }: AdminDashboardClie
   }
 
   const handleDelete = async (appointmentId: string) => {
+    setAppointments(prev => prev.filter(a => a.id !== appointmentId))
+    if (selectedAppointment?.id === appointmentId) setSelectedAppointment(null)
     const result = await deleteAppointmentAction(appointmentId)
-    if (result.success) {
-      setAppointments(prev => prev.filter(a => a.id !== appointmentId))
+    if (!result.success) {
+      console.error(result.error || 'Failed to delete appointment')
+      await refreshAppointments()
     }
   }
 

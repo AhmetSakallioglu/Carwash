@@ -9,6 +9,7 @@ import {
   BlackoutDate,
   Appointment,
 } from '@/types'
+import { PACKAGE_CATALOG, VEHICLE_SIZES, hydrateService, hydrateVehicleCategory, pricingMatrixToJson } from '@/lib/catalog'
 
 export const MOCK_BUSINESS_SETTINGS: BusinessSettings = {
   id: '00000000-0000-0000-0000-000000000001',
@@ -37,123 +38,34 @@ export const MOCK_BUSINESS_SETTINGS: BusinessSettings = {
   updated_at: '2026-09-01T12:00:00.000Z',
 }
 
-export const MOCK_SERVICES: Service[] = [
-  {
-    id: '22222222-2222-2222-2222-222222222201',
-    name: 'Exterior Signature Hand Wash',
-    slug: 'signature-hand-wash',
-    description: '2-bucket hand wash, wheel barrel decontamination, synthetic paint sealant, and crystal-clear glass.',
-    features: [
-      'Foam cannon pre-soak',
-      'Wheel barrel iron removal',
-      '60-day hydrophobic sealant',
-      'Streak-free crystal glass',
-      'Tire dressing and rim shine',
-    ],
-    base_price: 99,
-    duration_minutes: 60,
+export const MOCK_SERVICES: Service[] = PACKAGE_CATALOG.map(pkg =>
+  hydrateService({
+    id: pkg.id,
+    name: pkg.name,
+    slug: pkg.slug,
+    description: pkg.description,
+    features: pkg.features,
+    pricing_matrix: pricingMatrixToJson(pkg.rates),
     discount_percentage: 0,
     discount_active: false,
-    is_featured: false,
+    is_featured: pkg.isFeatured,
     is_active: true,
-    sort_order: 1,
+    sort_order: pkg.sortOrder,
     created_at: '2026-09-01T12:00:00.000Z',
     updated_at: '2026-09-01T12:00:00.000Z',
-  },
-  {
-    id: '22222222-2222-2222-2222-222222222202',
-    name: 'Interior Deep Steam Restoration',
-    slug: 'interior-deep-steam',
-    description: 'Full cabin steam extraction, leather conditioning, deep carpet shampoo, and antimicrobial sanitation.',
-    features: [
-      'Full cabin steam & sanitation',
-      'Deep carpet hot water extraction',
-      'Leather clean and UV conditioner',
-      'AC vent ozone odor treatment',
-      'All plastics and trim dressed',
-    ],
-    base_price: 159,
-    duration_minutes: 90,
-    discount_percentage: 15,
-    discount_active: true,
-    is_featured: false,
-    is_active: true,
-    sort_order: 2,
-    created_at: '2026-09-01T12:00:00.000Z',
-    updated_at: '2026-09-01T12:00:00.000Z',
-  },
-  {
-    id: '22222222-2222-2222-2222-222222222203',
-    name: 'Full Complete Reset (In & Out)',
-    slug: 'full-complete-reset',
-    description: 'Steam extraction, leather conditioning, clay bar decontam, and multi-layer high-gloss machine glaze.',
-    features: [
-      'Full cabin steam & sanitation',
-      'Clay bar paint treatment',
-      'Deep carpet hot water extraction',
-      'High-gloss machine glaze seal',
-      'Tire & trim deep rejuvenation',
-    ],
-    base_price: 249,
-    duration_minutes: 150,
-    discount_percentage: 20,
-    discount_active: true,
-    is_featured: true,
-    is_active: true,
-    sort_order: 3,
-    created_at: '2026-09-01T12:00:00.000Z',
-    updated_at: '2026-09-01T12:00:00.000Z',
-  },
-  {
-    id: '22222222-2222-2222-2222-222222222204',
-    name: 'Ceramic Coating & Paint Correction',
-    slug: 'ceramic-coating-correction',
-    description: 'Multi-stage machine paint correction eliminating swirls, topped with certified 3 to 5-year 9H ceramic matrix.',
-    features: [
-      '2-Stage swirl elimination',
-      '9H Ceramic layer application',
-      'Carfax registration warranty',
-      'Hydrophobic glass coating',
-      'Wheel faces ceramic protected',
-    ],
-    base_price: 799,
-    duration_minutes: 240,
-    discount_percentage: 0,
-    discount_active: false,
-    is_featured: false,
-    is_active: true,
-    sort_order: 4,
-    created_at: '2026-09-01T12:00:00.000Z',
-    updated_at: '2026-09-01T12:00:00.000Z',
-  },
-]
+  })
+)
 
-export const MOCK_VEHICLE_CATEGORIES: VehicleCategory[] = [
-  {
-    id: '11111111-1111-1111-1111-111111111101',
-    label: 'Sedan / Coupe',
-    multiplier: 1.0,
+export const MOCK_VEHICLE_CATEGORIES: VehicleCategory[] = VEHICLE_SIZES.map(size =>
+  hydrateVehicleCategory({
+    id: size.id,
+    label: size.label,
+    size_key: size.key,
     is_active: true,
-    sort_order: 1,
+    sort_order: size.sortOrder,
     created_at: '2026-09-01T12:00:00.000Z',
-  },
-  {
-    id: '11111111-1111-1111-1111-111111111102',
-    label: 'Mid-SUV / Crossover',
-    multiplier: 1.2,
-    is_active: true,
-    sort_order: 2,
-    created_at: '2026-09-01T12:00:00.000Z',
-  },
-  {
-    id: '11111111-1111-1111-1111-111111111103',
-    label: 'Truck / 3-Row SUV',
-    multiplier: 1.4,
-    is_active: true,
-    sort_order: 3,
-    created_at: '2026-09-01T12:00:00.000Z',
-  },
-]
+  })
+)
 
 export const MOCK_ADDONS: Addon[] = [
   {
@@ -337,7 +249,7 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
     ],
     travel_fee: 0,
     travel_time_minutes: 15,
-    total_price: 874,
+    total_price: 324,
     start_time: '2026-09-17T14:00:00.000Z', // 9:00 AM CT
     end_time: '2026-09-17T18:45:00.000Z',
     status: 'confirmed',
@@ -364,7 +276,7 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
     ],
     travel_fee: 0,
     travel_time_minutes: 20,
-    total_price: 328.8,
+    total_price: 329,
     start_time: '2026-09-18T15:00:00.000Z', // 10:00 AM CT
     end_time: '2026-09-18T18:20:00.000Z',
     status: 'confirmed',

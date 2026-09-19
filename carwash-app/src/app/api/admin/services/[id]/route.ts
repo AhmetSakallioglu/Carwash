@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_SERVICES } from '@/lib/supabase/mock-data'
+import { getServicePricingMatrix, hydrateService } from '@/lib/catalog'
+import { Service } from '@/types'
 
 export async function PUT(
   request: NextRequest,
@@ -14,13 +16,18 @@ export async function PUT(
     const body = await request.json()
     const isLiveDb = isSupabaseConfigured()
 
+    const matrix = body.pricing_matrix ? getServicePricingMatrix(body) : null
     const updatePayload = {
       ...(body.name && { name: body.name }),
       ...(body.slug && { slug: body.slug }),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.features && { features: body.features }),
-      ...(body.base_price !== undefined && { base_price: Number(body.base_price) }),
-      ...(body.duration_minutes !== undefined && { duration_minutes: Number(body.duration_minutes) }),
+      ...(matrix
+        ? { pricing_matrix: matrix, base_price: matrix.sedan.price, duration_minutes: matrix.sedan.durationMinutes }
+        : {
+            ...(body.base_price !== undefined && { base_price: Number(body.base_price) }),
+            ...(body.duration_minutes !== undefined && { duration_minutes: Number(body.duration_minutes) }),
+          }),
       ...(body.discount_percentage !== undefined && {
         discount_percentage: Math.min(100, Math.max(0, Number(body.discount_percentage) || 0)),
       }),
@@ -43,14 +50,14 @@ export async function PUT(
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
-      return NextResponse.json({ service: data })
+      return NextResponse.json({ service: hydrateService(data as unknown as Service) })
     }
 
     const service = MOCK_SERVICES.find(s => s.id === id)
     if (!service) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 })
     }
-    Object.assign(service, updatePayload)
+    Object.assign(service, hydrateService({ ...service, ...updatePayload }))
     return NextResponse.json({ service })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error updating service'

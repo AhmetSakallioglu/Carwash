@@ -1,16 +1,26 @@
 'use client'
 
 import React from 'react'
-import { Service } from '@/types'
+import { Service, VehicleCategory } from '@/types'
 import { Droplets, ShieldCheck, Gem, Sparkles, Check, Tag } from 'lucide-react'
 import { formatCurrency, calculateDiscountedBasePrice, hasActiveDiscount } from '@/lib/utils'
+import { getPackageSizeRate, getStartingPackageRate } from '@/lib/catalog'
 
 interface ServicesSectionProps {
   services: Service[]
+  categories?: VehicleCategory[]
+  selectedCategory?: VehicleCategory | null
+  onSelectCategoryId?: (id: string) => void
   onSelectService: (service: Service) => void
 }
 
-export function ServicesSection({ services, onSelectService }: ServicesSectionProps) {
+export function ServicesSection({
+  services,
+  categories = [],
+  selectedCategory,
+  onSelectCategoryId,
+  onSelectService,
+}: ServicesSectionProps) {
   const getIconForService = (index: number) => {
     switch (index % 4) {
       case 0:
@@ -38,17 +48,41 @@ export function ServicesSection({ services, onSelectService }: ServicesSectionPr
             Engineered for Automotive Perfection
           </p>
           <p className="text-slate-400 text-sm">
-            Choose a package below to customize options in our Austin price builder.
+            Choose a vehicle size, then pick a package. Price and time update for that size.
           </p>
+          {categories.length > 0 && onSelectCategoryId && (
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-3 gap-2.5 mt-6 text-left">
+              {categories.filter(cat => cat.is_active).map(cat => {
+                const isSelected = cat.id === selectedCategory?.id
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => onSelectCategoryId(cat.id)}
+                    className={`px-3 py-3 rounded-xl text-xs font-bold text-center transition cursor-pointer active:scale-95 ${
+                      isSelected
+                        ? 'border border-brand-cyan bg-cyan-500/15 text-white'
+                        : 'border border-slate-700 bg-slate-900/60 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {activeServices.map((service, index) => {
             const isFeatured = service.is_featured
             const hasDiscount = hasActiveDiscount(service.discount_percentage, service.discount_active)
+            const sizeRate = selectedCategory
+              ? getPackageSizeRate(service, selectedCategory)
+              : getStartingPackageRate(service)
             const discountedPrice = hasDiscount
-              ? calculateDiscountedBasePrice(service.base_price, service.discount_percentage, true)
-              : service.base_price
+              ? calculateDiscountedBasePrice(sizeRate.price, service.discount_percentage, true)
+              : sizeRate.price
 
             return (
               <div
@@ -119,20 +153,20 @@ export function ServicesSection({ services, onSelectService }: ServicesSectionPr
                             {formatCurrency(discountedPrice)}
                           </span>
                           <span className="line-through text-slate-500 text-xs">
-                            {formatCurrency(service.base_price)}
+                            {formatCurrency(sizeRate.price)}
                           </span>
                         </div>
                         <span className="text-[10px] text-cyan-300 font-semibold block">
-                          Limited Promo • ~{service.duration_minutes} mins
+                          Limited Promo • ~{sizeRate.durationMinutes} mins
                         </span>
                       </div>
                     ) : (
                       <div>
                         <span className="text-base font-bold text-white font-display block">
-                          {formatCurrency(service.base_price)}
+                          {formatCurrency(sizeRate.price)}
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          ~{service.duration_minutes} mins
+                          {selectedCategory ? selectedCategory.label : 'Starting at'} · ~{sizeRate.durationMinutes} mins
                         </span>
                       </div>
                     )}

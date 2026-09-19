@@ -41,7 +41,7 @@ export function AustinServiceArea({ zones = [] }: { zones?: LocationZone[] }) {
               >
                 <span className="text-slate-200 font-medium min-w-0 truncate">{zone.zone_name}</span>
                 <span className="text-brand-neon font-bold shrink-0">
-                  {zone.travel_fee > 0 ? `+${formatCurrency(zone.travel_fee)}` : '$0'} · {zone.travel_time_minutes}m
+                  {zone.travel_fee > 0 ? `+${formatCurrency(zone.travel_fee)}` : '$0'}
                 </span>
               </div>
             ))}
@@ -139,9 +139,12 @@ export function Footer({ settings, schedules = [] }: FooterProps) {
         <p>
           © {year} {settings.business_name}. All rights reserved.
         </p>
-        <nav aria-label="Legal">
+        <nav aria-label="Legal" className="flex items-center gap-4">
           <Link href="/privacy-policy" className="hover:text-white transition">
             Privacy Policy
+          </Link>
+          <Link href="/terms" className="hover:text-white transition">
+            Terms of Service
           </Link>
         </nav>
         <p>Austin, Texas • {settings.tagline}</p>

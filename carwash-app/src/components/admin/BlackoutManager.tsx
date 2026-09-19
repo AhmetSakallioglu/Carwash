@@ -81,6 +81,7 @@ export function BlackoutManager({ initialBlackouts }: BlackoutManagerProps) {
   const [viewMonth, setViewMonth] = useState(new Date())
   const [pickingEnd, setPickingEnd] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const monthCells = useMemo(() => buildMonthCells(viewMonth), [viewMonth])
@@ -165,17 +166,23 @@ export function BlackoutManager({ initialBlackouts }: BlackoutManagerProps) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this blackout date / time off period?')) return
+    if (!id || deletingId) return
+    setDeletingId(id)
+    setErrorMessage(null)
+    const previous = blackouts
+    setBlackouts(current => current.filter(item => item.id !== id))
 
     try {
       const result = await deleteBlackoutAction(id)
-      if (result.success) {
-        setBlackouts(blackouts.filter(b => b.id !== id))
-      } else {
-        alert(result.error || 'Failed to delete')
+      if (!result.success) {
+        setBlackouts(previous)
+        setErrorMessage(result.error || 'Failed to delete blackout date')
       }
     } catch {
-      alert('Error deleting blackout date')
+      setBlackouts(previous)
+      setErrorMessage('Error deleting blackout date')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -203,6 +210,12 @@ export function BlackoutManager({ initialBlackouts }: BlackoutManagerProps) {
         </button>
       </div>
 
+      {errorMessage && !isAdding && (
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+          {errorMessage}
+        </div>
+      )}
+
       <div className="space-y-3">
         {blackouts.length === 0 ? (
           <div className="p-8 text-center text-xs text-slate-500 italic">
@@ -229,10 +242,11 @@ export function BlackoutManager({ initialBlackouts }: BlackoutManagerProps) {
               <button
                 onClick={() => handleDelete(b.id)}
                 type="button"
-                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition cursor-pointer"
+                disabled={deletingId === b.id}
+                className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition cursor-pointer disabled:opacity-50"
                 title="Remove Block"
               >
-                <Trash2 className="w-4 h-4" />
+                {deletingId === b.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
               </button>
             </div>
           ))

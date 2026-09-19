@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_APPOINTMENTS } from '@/lib/supabase/mock-data'
 import { formatDateTimeCT } from '@/lib/utils'
 import { sendBookingRescheduledSMS, sendBookingCancelledSMS } from '@/lib/twilio'
-import { updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
+import {
+  syncAppointmentToCalendar,
+  deleteCalendarEventForAppointment,
+  isRealGoogleEventId,
+} from '@/lib/google-calendar'
 import { Appointment } from '@/types'
 
 export async function GET(
@@ -118,16 +122,29 @@ export async function PATCH(
     const serviceName = updatedRecord.service?.name || 'Detailing Service'
     const vehicleLabel = updatedRecord.vehicle_category?.label || 'Vehicle'
 
-    // 1. Handle Google Calendar Update / Delete
-    if (updatedRecord.google_event_id) {
-      if (wasCancelled) {
-        await deleteCalendarEvent(updatedRecord.google_event_id).catch(() => {})
-      } else if (wasRescheduled || body.customer_name || body.total_price) {
-        await updateCalendarEvent(updatedRecord.google_event_id, {
+    if (wasCancelled) {
+      after(() => {
+        deleteCalendarEventForAppointment(
+          currentAppointment.google_event_id || updatedRecord.google_event_id,
+          updatedRecord.appointment_code
+        ).catch(err => console.error('[Google Calendar Cancel Error]:', err))
+      })
+    } else if (!wasCancelled && (wasRescheduled || body.customer_name || body.total_price)) {
+      const eventId = await syncAppointmentToCalendar(
+        {
           appointment: updatedRecord,
           serviceName,
           vehicleLabel,
-        }).catch(() => {})
+        },
+        updatedRecord.google_event_id
+      ).catch(() => null)
+
+      if (isRealGoogleEventId(eventId) && eventId !== updatedRecord.google_event_id && isLiveDb) {
+        await createAdminClient()
+          .from('appointments')
+          .update({ google_event_id: eventId } as never)
+          .eq('id', id)
+        updatedRecord.google_event_id = eventId
       }
     }
 
@@ -174,14 +191,23 @@ export async function DELETE(
 
     if (isLiveDb) {
       const supabase = createAdminClient()
-      const { data: apt } = await supabase.from('appointments').select('google_event_id').eq('id', id).single()
-      if (apt?.google_event_id) {
-        await deleteCalendarEvent(apt.google_event_id).catch(() => {})
-      }
+      const { data: apt } = await supabase
+        .from('appointments')
+        .select('google_event_id, appointment_code')
+        .eq('id', id)
+        .single()
 
       const { error } = await supabase.from('appointments').delete().eq('id', id)
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      if (apt) {
+        after(() => {
+          deleteCalendarEventForAppointment(apt.google_event_id, apt.appointment_code).catch(err =>
+            console.error('[Google Calendar Delete Error]:', err)
+          )
+        })
       }
     } else {
       const idx = MOCK_APPOINTMENTS.findIndex(a => a.id === id)

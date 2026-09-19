@@ -25,6 +25,41 @@ interface ResponsiveSelectProps {
 
 const MOBILE_QUERY = '(max-width: 639px)'
 
+function lockBodyScroll() {
+  const scrollY = window.scrollY
+  const { body } = document
+  body.dataset.dropdownScrollY = String(scrollY)
+  body.style.position = 'fixed'
+  body.style.top = `-${scrollY}px`
+  body.style.left = '0'
+  body.style.right = '0'
+  body.style.width = '100%'
+  body.style.overflow = 'hidden'
+}
+
+function unlockBodyScroll() {
+  const { body } = document
+  const scrollY = Number(body.dataset.dropdownScrollY || '0')
+  delete body.dataset.dropdownScrollY
+  body.style.position = ''
+  body.style.top = ''
+  body.style.left = ''
+  body.style.right = ''
+  body.style.width = ''
+  body.style.overflow = ''
+  window.scrollTo(0, scrollY)
+}
+
+function scrollOptionIntoMenu(menu: HTMLElement, option: HTMLElement) {
+  const menuRect = menu.getBoundingClientRect()
+  const optionRect = option.getBoundingClientRect()
+  if (optionRect.top < menuRect.top) {
+    menu.scrollTop -= menuRect.top - optionRect.top
+  } else if (optionRect.bottom > menuRect.bottom) {
+    menu.scrollTop += optionRect.bottom - menuRect.bottom
+  }
+}
+
 export function ResponsiveSelect({
   value,
   onChange,
@@ -39,7 +74,12 @@ export function ResponsiveSelect({
   const [open, setOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({})
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    visibility: 'hidden',
+  })
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
@@ -73,6 +113,7 @@ export function ResponsiveSelect({
       maxHeight: Math.min(320, window.innerHeight - gutter * 2),
       top: openUpward ? undefined : rect.bottom + 8,
       bottom: openUpward ? window.innerHeight - rect.top + 8 : undefined,
+      visibility: 'visible',
       zIndex: 80,
     })
   }, [])
@@ -80,7 +121,9 @@ export function ResponsiveSelect({
   useLayoutEffect(() => {
     if (!open) return
     updatePosition()
-    selectedRef.current?.scrollIntoView({ block: 'nearest' })
+    const menu = menuRef.current
+    const option = selectedRef.current
+    if (menu && option) scrollOptionIntoMenu(menu, option)
   }, [open, updatePosition, options, value])
 
   useEffect(() => {
@@ -99,11 +142,9 @@ export function ResponsiveSelect({
     document.addEventListener('mousedown', onPointerDown)
     document.addEventListener('touchstart', onPointerDown)
     window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
 
-    const previousOverflow = document.body.style.overflow
     if (window.matchMedia(MOBILE_QUERY).matches) {
-      document.body.style.overflow = 'hidden'
+      lockBodyScroll()
     }
 
     return () => {
@@ -111,8 +152,9 @@ export function ResponsiveSelect({
       document.removeEventListener('mousedown', onPointerDown)
       document.removeEventListener('touchstart', onPointerDown)
       window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-      document.body.style.overflow = previousOverflow
+      if (document.body.dataset.dropdownScrollY !== undefined) {
+        unlockBodyScroll()
+      }
     }
   }, [open, updatePosition])
 
@@ -158,7 +200,7 @@ export function ResponsiveSelect({
     open && mounted
       ? createPortal(
           isMobile ? (
-            <div className="fixed inset-0 z-[80]">
+            <div className="fixed inset-0 z-[80] overscroll-none">
               <button
                 type="button"
                 className="absolute inset-0 bg-black/65"
@@ -167,7 +209,7 @@ export function ResponsiveSelect({
               />
               <div
                 ref={menuRef}
-                className="absolute inset-x-0 bottom-0 max-h-[80dvh] rounded-t-3xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col safe-bottom"
+                className="absolute inset-x-0 bottom-0 max-h-[80dvh] overflow-y-auto overscroll-contain rounded-t-3xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col safe-bottom"
               >
                 <div className="mx-auto mt-2 mb-1 h-1.5 w-10 rounded-full bg-slate-600" />
                 {title && (
@@ -175,11 +217,7 @@ export function ResponsiveSelect({
                     {title}
                   </div>
                 )}
-                <div
-                  id={listId}
-                  role="listbox"
-                  className="overflow-y-auto overscroll-contain px-2 pb-3"
-                >
+                <div id={listId} role="listbox" className="px-2 pb-3">
                   {optionButtons}
                 </div>
               </div>
@@ -209,6 +247,7 @@ export function ResponsiveSelect({
         aria-expanded={open}
         aria-controls={listId}
         aria-label={ariaLabel || title}
+        onMouseDown={event => event.preventDefault()}
         onClick={() => setOpen(current => !current)}
         className={`w-full min-h-12 flex items-center justify-between gap-3 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-3 text-left text-base sm:text-sm text-white focus:outline-none focus:border-brand-cyan transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${triggerClassName}`.trim()}
       >

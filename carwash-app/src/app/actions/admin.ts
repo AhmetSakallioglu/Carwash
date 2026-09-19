@@ -1,5 +1,6 @@
 'use server'
 
+import { after } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
@@ -19,9 +20,20 @@ import {
   MOCK_BUSINESS_SETTINGS,
 } from '@/lib/supabase/mock-data'
 import { formatDateTimeCT } from '@/lib/utils'
+import {
+  getServicePricingMatrix,
+  hydrateService,
+  hydrateVehicleCategory,
+  resolveVehicleSizeKey,
+} from '@/lib/catalog'
 import { normalizeBusinessSettings, HOMEPAGE_BEFORE_AFTER_CATEGORY } from '@/lib/settings'
 import { sendBookingRescheduledSMS, sendBookingCancelledSMS } from '@/lib/twilio'
-import { updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
+import {
+  syncAppointmentToCalendar,
+  deleteCalendarEvent,
+  deleteCalendarEventForAppointment,
+  isRealGoogleEventId,
+} from '@/lib/google-calendar'
 import {
   Addon,
   Appointment,
@@ -88,13 +100,15 @@ export async function saveServiceAction(
   if (denied) return denied
   try {
     const slug = payload.slug || slugify(payload.name)
+    const matrix = getServicePricingMatrix(payload)
     const record = {
       name: payload.name,
       slug,
       description: payload.description || '',
       features: Array.isArray(payload.features) ? payload.features : [],
-      base_price: Number(payload.base_price),
-      duration_minutes: Number(payload.duration_minutes) || 60,
+      base_price: matrix.sedan.price,
+      duration_minutes: matrix.sedan.durationMinutes,
+      pricing_matrix: JSON.parse(JSON.stringify(matrix)),
       discount_percentage: Math.min(100, Math.max(0, Number(payload.discount_percentage) || 0)),
       discount_active: Boolean(payload.discount_active),
       is_featured: Boolean(payload.is_featured),
@@ -105,37 +119,34 @@ export async function saveServiceAction(
 
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient()
-      if (payload.id) {
-        const { data, error } = await supabase
-          .from('services')
-          .update(record)
-          .eq('id', payload.id)
-          .select()
-          .single()
-        if (error || !data) return { success: false, error: error?.message || 'Failed to update service' }
-        revalidateAdmin()
-        return { success: true, data: data as unknown as Service }
-      }
+      const persist = async (body: typeof record) =>
+        payload.id
+          ? supabase.from('services').update(body as never).eq('id', payload.id).select().single()
+          : supabase.from('services').insert(body as never).select().single()
 
-      const { data, error } = await supabase.from('services').insert(record).select().single()
-      if (error || !data) return { success: false, error: error?.message || 'Failed to create service' }
+      let { data, error } = await persist(record)
+      if (error && /pricing_matrix/i.test(error.message)) {
+        const { pricing_matrix: _matrix, ...legacyRecord } = record
+        ;({ data, error } = await persist(legacyRecord as typeof record))
+      }
+      if (error || !data) return { success: false, error: error?.message || 'Failed to save service' }
       revalidateAdmin()
-      return { success: true, data: data as unknown as Service }
+      return { success: true, data: hydrateService({ ...(data as unknown as Service), pricing_matrix: record.pricing_matrix as Service['pricing_matrix'] }) }
     } else {
       // Mock Data persistence fallback
       if (payload.id) {
         const idx = MOCK_SERVICES.findIndex(s => s.id === payload.id)
         if (idx !== -1) {
-          MOCK_SERVICES[idx] = { ...MOCK_SERVICES[idx], ...record }
+          MOCK_SERVICES[idx] = hydrateService({ ...MOCK_SERVICES[idx], ...record })
           revalidateAdmin()
           return { success: true, data: MOCK_SERVICES[idx] }
         }
       }
-      const newService: Service = {
+      const newService = hydrateService({
         id: `mock_svc_${Date.now()}`,
         ...record,
         created_at: new Date().toISOString(),
-      }
+      })
       MOCK_SERVICES.push(newService)
       revalidateAdmin()
       return { success: true, data: newService }
@@ -175,43 +186,43 @@ export async function saveVehicleCategoryAction(
   try {
     const record = {
       label: payload.label,
-      multiplier: Number(payload.multiplier),
+      size_key: resolveVehicleSizeKey(payload),
       is_active: payload.is_active !== undefined ? Boolean(payload.is_active) : true,
       sort_order: Number(payload.sort_order) || 0,
     }
 
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient()
-      if (payload.id) {
-        const { data, error } = await supabase
-          .from('vehicle_categories')
-          .update(record)
-          .eq('id', payload.id)
-          .select()
-          .single()
-        if (error || !data) return { success: false, error: error?.message || 'Failed to update category' }
-        revalidateAdmin()
-        return { success: true, data: data as unknown as VehicleCategory }
-      }
+      const persist = async (body: Record<string, unknown>) =>
+        payload.id
+          ? supabase.from('vehicle_categories').update(body as never).eq('id', payload.id).select().single()
+          : supabase.from('vehicle_categories').insert(body as never).select().single()
 
-      const { data, error } = await supabase.from('vehicle_categories').insert(record).select().single()
-      if (error || !data) return { success: false, error: error?.message || 'Failed to create category' }
+      let { data, error } = await persist(record)
+      if (error && /size_key/i.test(error.message)) {
+        const { size_key: _sizeKey, ...legacyRecord } = record
+        ;({ data, error } = await persist({ ...legacyRecord, multiplier: 1 }))
+      }
+      if (error || !data) return { success: false, error: error?.message || 'Failed to save category' }
       revalidateAdmin()
-      return { success: true, data: data as unknown as VehicleCategory }
+      return { success: true, data: hydrateVehicleCategory({ ...(data as unknown as VehicleCategory), size_key: record.size_key }) }
     } else {
       if (payload.id) {
         const idx = MOCK_VEHICLE_CATEGORIES.findIndex(c => c.id === payload.id)
         if (idx !== -1) {
-          MOCK_VEHICLE_CATEGORIES[idx] = { ...MOCK_VEHICLE_CATEGORIES[idx], ...record }
+          MOCK_VEHICLE_CATEGORIES[idx] = hydrateVehicleCategory({
+            ...MOCK_VEHICLE_CATEGORIES[idx],
+            ...record,
+          })
           revalidateAdmin()
           return { success: true, data: MOCK_VEHICLE_CATEGORIES[idx] }
         }
       }
-      const newCat: VehicleCategory = {
+      const newCat = hydrateVehicleCategory({
         id: `mock_cat_${Date.now()}`,
         ...record,
         created_at: new Date().toISOString(),
-      }
+      })
       MOCK_VEHICLE_CATEGORIES.push(newCat)
       revalidateAdmin()
       return { success: true, data: newCat }
@@ -719,6 +730,19 @@ export async function createBlackoutAction(payload: {
   const denied = await requireAdminAccess()
   if (denied) return denied
   try {
+    if (!isSupabaseConfigured()) {
+      const created: BlackoutDate = {
+        id: `mock_blackout_${Date.now()}`,
+        title: payload.title,
+        start_datetime: payload.start_datetime,
+        end_datetime: payload.end_datetime,
+        is_full_day: payload.is_full_day,
+        created_at: new Date().toISOString(),
+      }
+      MOCK_BLACKOUTS.push(created)
+      return { success: true, data: created }
+    }
+
     const { data, error } = await createAdminClient()
       .from('blackout_dates')
       .insert({
@@ -731,7 +755,7 @@ export async function createBlackoutAction(payload: {
       .single()
 
     if (error || !data) return { success: false, error: error?.message || 'Failed to create blackout' }
-    revalidateAdmin()
+    revalidatePath('/admin/schedule')
     return { success: true, data: data as unknown as BlackoutDate }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create blackout' }
@@ -741,10 +765,29 @@ export async function createBlackoutAction(payload: {
 export async function deleteBlackoutAction(id: string): Promise<ActionResult> {
   const denied = await requireAdminAccess()
   if (denied) return denied
+  if (!id) return { success: false, error: 'Missing blackout id' }
+
   try {
-    const { error } = await createAdminClient().from('blackout_dates').delete().eq('id', id)
-    if (error) return { success: false, error: error.message }
-    revalidateAdmin()
+    if (!isSupabaseConfigured() || id.startsWith('mock_blackout_') || id.startsWith('44444444-')) {
+      const idx = MOCK_BLACKOUTS.findIndex(item => item.id === id)
+      if (idx !== -1) MOCK_BLACKOUTS.splice(idx, 1)
+      if (!isSupabaseConfigured()) return { success: true }
+    }
+
+    if (isSupabaseConfigured()) {
+      const { data, error } = await createAdminClient()
+        .from('blackout_dates')
+        .delete()
+        .eq('id', id)
+        .select('id')
+
+      if (error) return { success: false, error: error.message }
+      if (!data?.length && !id.startsWith('mock_blackout_') && !id.startsWith('44444444-')) {
+        return { success: false, error: 'Blackout was not found or could not be deleted.' }
+      }
+    }
+
+    revalidatePath('/admin/schedule')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete blackout' }
@@ -830,15 +873,29 @@ export async function updateAppointmentAction(
     const serviceName = updatedRecord.service?.name || 'Detailing Service'
     const vehicleLabel = updatedRecord.vehicle_category?.label || 'Vehicle'
 
-    if (updatedRecord.google_event_id) {
-      if (wasCancelled) {
-        await deleteCalendarEvent(updatedRecord.google_event_id).catch(() => {})
-      } else if (wasRescheduled || body.customer_name || body.total_price) {
-        await updateCalendarEvent(updatedRecord.google_event_id, {
+    if (wasCancelled) {
+      after(() => {
+        deleteCalendarEventForAppointment(
+          currentAppointment.google_event_id || updatedRecord.google_event_id,
+          updatedRecord.appointment_code
+        ).catch(err => console.error('[Google Calendar Cancel Error]:', err))
+      })
+    } else if (!wasCancelled && (wasRescheduled || body.customer_name || body.total_price)) {
+      const eventId = await syncAppointmentToCalendar(
+        {
           appointment: updatedRecord,
           serviceName,
           vehicleLabel,
-        }).catch(() => {})
+        },
+        updatedRecord.google_event_id
+      ).catch(() => null)
+
+      if (isRealGoogleEventId(eventId) && eventId !== updatedRecord.google_event_id && isLiveDb) {
+        await createAdminClient()
+          .from('appointments')
+          .update({ google_event_id: eventId } as never)
+          .eq('id', id)
+        updatedRecord.google_event_id = eventId
       }
     }
 
@@ -884,12 +941,22 @@ export async function deleteAppointmentAction(id: string): Promise<ActionResult>
   try {
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient()
-      const { data: apt } = await supabase.from('appointments').select('google_event_id').eq('id', id).single()
-      if (apt?.google_event_id) {
-        await deleteCalendarEvent(apt.google_event_id).catch(() => {})
-      }
+      const { data: apt } = await supabase
+        .from('appointments')
+        .select('google_event_id, appointment_code')
+        .eq('id', id)
+        .single()
+
       const { error } = await supabase.from('appointments').delete().eq('id', id)
       if (error) return { success: false, error: error.message }
+
+      if (apt) {
+        after(() => {
+          deleteCalendarEventForAppointment(apt.google_event_id, apt.appointment_code).catch(err =>
+            console.error('[Google Calendar Delete Error]:', err)
+          )
+        })
+      }
     } else {
       const idx = MOCK_APPOINTMENTS.findIndex(a => a.id === id)
       if (idx !== -1) MOCK_APPOINTMENTS.splice(idx, 1)

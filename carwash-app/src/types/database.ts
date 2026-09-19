@@ -18,6 +18,7 @@ export interface Database {
           features: string[]
           base_price: number
           duration_minutes: number
+          pricing_matrix: Json
           discount_percentage: number
           discount_active: boolean
           is_featured: boolean
@@ -34,6 +35,7 @@ export interface Database {
           features?: string[]
           base_price: number
           duration_minutes?: number
+          pricing_matrix?: Json
           discount_percentage?: number
           discount_active?: boolean
           is_featured?: boolean
@@ -50,6 +52,7 @@ export interface Database {
           features?: string[]
           base_price?: number
           duration_minutes?: number
+          pricing_matrix?: Json
           discount_percentage?: number
           discount_active?: boolean
           is_featured?: boolean
@@ -63,7 +66,7 @@ export interface Database {
         Row: {
           id: string
           label: string
-          multiplier: number
+          size_key: string
           is_active: boolean
           sort_order: number
           created_at: string
@@ -71,7 +74,7 @@ export interface Database {
         Insert: {
           id?: string
           label: string
-          multiplier?: number
+          size_key?: string
           is_active?: boolean
           sort_order?: number
           created_at?: string
@@ -79,7 +82,7 @@ export interface Database {
         Update: {
           id?: string
           label?: string
-          multiplier?: number
+          size_key?: string
           is_active?: boolean
           sort_order?: number
           created_at?: string

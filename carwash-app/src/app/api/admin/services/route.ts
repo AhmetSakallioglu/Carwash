@@ -3,6 +3,7 @@ import { unauthorizedIfNotAdmin } from '@/lib/auth'
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin'
 import { MOCK_SERVICES } from '@/lib/supabase/mock-data'
 import { Service } from '@/types'
+import { getServicePricingMatrix, hydrateService } from '@/lib/catalog'
 
 export async function GET() {
   const denied = await unauthorizedIfNotAdmin()
@@ -21,7 +22,7 @@ export async function GET() {
         if (error || !data || data.length === 0) {
           return NextResponse.json({ services: MOCK_SERVICES })
         }
-        return NextResponse.json({ services: data })
+        return NextResponse.json({ services: data.map(row => hydrateService(row as unknown as Service)) })
       } catch {
         return NextResponse.json({ services: MOCK_SERVICES })
       }
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
     const isLiveDb = isSupabaseConfigured()
 
     const slug = body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+    const matrix = getServicePricingMatrix(body)
 
     if (isLiveDb) {
       const supabase = createAdminClient()
@@ -52,8 +54,9 @@ export async function POST(request: NextRequest) {
           slug,
           description: body.description || '',
           features: Array.isArray(body.features) ? body.features : [],
-          base_price: Number(body.base_price),
-          duration_minutes: Number(body.duration_minutes) || 60,
+          base_price: matrix.sedan.price,
+          duration_minutes: matrix.sedan.durationMinutes,
+          pricing_matrix: JSON.parse(JSON.stringify(matrix)),
           discount_percentage: Math.min(100, Math.max(0, Number(body.discount_percentage) || 0)),
           discount_active: Boolean(body.discount_active),
           is_featured: Boolean(body.is_featured),
@@ -67,17 +70,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
-      return NextResponse.json({ service: data })
+      return NextResponse.json({ service: hydrateService(data as unknown as Service) })
     }
 
-    const newService: Service = {
+    const newService = hydrateService({
       id: `mock_svc_${Date.now()}`,
       name: body.name,
       slug,
       description: body.description || '',
       features: Array.isArray(body.features) ? body.features : [],
-      base_price: Number(body.base_price),
-      duration_minutes: Number(body.duration_minutes) || 60,
+      pricing_matrix: JSON.parse(JSON.stringify(matrix)),
       discount_percentage: Math.min(100, Math.max(0, Number(body.discount_percentage) || 0)),
       discount_active: Boolean(body.discount_active),
       is_featured: Boolean(body.is_featured),
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
       sort_order: Number(body.sort_order) || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    }
+    })
     MOCK_SERVICES.push(newService)
     return NextResponse.json({ service: newService })
   } catch (err: unknown) {

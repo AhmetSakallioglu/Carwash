@@ -123,7 +123,7 @@ export function formatLocationZoneOption(zone: {
     zone.travel_fee > 0
       ? `+${formatCurrency(zone.travel_fee)} Travel Fee`
       : '$0 Travel Fee'
-  return `${zone.zone_name} — ${feeLabel} & ${zone.travel_time_minutes}m Transit`
+  return `${zone.zone_name} — ${feeLabel}`
 }
 
 export const OUT_OF_SERVICE_AREA_MESSAGE =
@@ -262,18 +262,17 @@ export function calculateDiscountedBasePrice(
 }
 
 /**
- * Calculate total price given service base price, vehicle multiplier, selected addons,
- * optional travel fee, and promotional discount.
+ * Calculate total price from the selected package-size rate, add-ons,
+ * optional travel fee, and promotional discount. No vehicle multipliers.
  */
 export function calculateBookingPrice(
-  basePrice: number,
-  vehicleMultiplier: number,
+  packagePrice: number,
   addonPrices: number[],
   travelFee = 0,
   discountPercentage = 0,
   discountActive = false
 ): number {
-  const effectiveBase = calculateDiscountedBasePrice(basePrice, discountPercentage, discountActive)
+  const effectivePackage = calculateDiscountedBasePrice(packagePrice, discountPercentage, discountActive)
   const addonsTotal = addonPrices.reduce((acc, p) => acc + p, 0)
-  return Math.round((effectiveBase * vehicleMultiplier + addonsTotal + travelFee) * 100) / 100
+  return Math.round((effectivePackage + addonsTotal + travelFee) * 100) / 100
 }

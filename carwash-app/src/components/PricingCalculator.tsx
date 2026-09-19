@@ -14,6 +14,7 @@ import {
 } from '@/lib/utils'
 import { Check, Sparkles, MapPin, Tag } from 'lucide-react'
 import { vehicleCategorySizeHint } from '@/lib/settings'
+import { getPackageSizeRate } from '@/lib/catalog'
 import { ResponsiveSelect } from './ResponsiveSelect'
 
 export interface SelectedConfiguration {
@@ -85,51 +86,46 @@ export function PricingCalculator({
     currentService?.discount_active
   )
 
+  const packageRate = useMemo(() => {
+    if (!currentService || !currentCategory) return { price: 0, durationMinutes: 60 }
+    return getPackageSizeRate(currentService, currentCategory)
+  }, [currentService, currentCategory])
+
   const discountedBasePrice = useMemo(() => {
-    if (!currentService) return 0
     return calculateDiscountedBasePrice(
-      currentService.base_price,
-      currentService.discount_percentage,
-      currentService.discount_active
+      packageRate.price,
+      currentService?.discount_percentage,
+      currentService?.discount_active
     )
-  }, [currentService])
+  }, [currentService, packageRate.price])
 
   const totalPrice = useMemo(() => {
     if (!currentService || !currentCategory) return 0
     const addonPrices = currentSelectedAddons.map(a => a.price)
     const travelFee = currentZone?.travel_fee || 0
     return calculateBookingPrice(
-      currentService.base_price,
-      currentCategory.multiplier,
+      packageRate.price,
       addonPrices,
       travelFee,
       currentService.discount_percentage,
       currentService.discount_active
     )
-  }, [currentService, currentCategory, currentSelectedAddons, currentZone])
+  }, [currentService, currentCategory, currentSelectedAddons, currentZone, packageRate.price])
 
   const originalTotalPriceWithoutDiscount = useMemo(() => {
     if (!currentService || !currentCategory) return 0
     const addonPrices = currentSelectedAddons.map(a => a.price)
     const travelFee = currentZone?.travel_fee || 0
-    return calculateBookingPrice(
-      currentService.base_price,
-      currentCategory.multiplier,
-      addonPrices,
-      travelFee,
-      0,
-      false
-    )
-  }, [currentService, currentCategory, currentSelectedAddons, currentZone])
+    return calculateBookingPrice(packageRate.price, addonPrices, travelFee, 0, false)
+  }, [currentService, currentCategory, currentSelectedAddons, currentZone, packageRate.price])
 
   const discountSavings = Math.max(0, originalTotalPriceWithoutDiscount - totalPrice)
 
   const totalDuration = useMemo(() => {
     if (!currentService) return 60
     const addonsDuration = currentSelectedAddons.reduce((acc, a) => acc + a.duration_minutes, 0)
-    const travelBuffer = currentZone?.travel_time_minutes || 0
-    return currentService.duration_minutes + addonsDuration + travelBuffer
-  }, [currentService, currentSelectedAddons, currentZone])
+    return packageRate.durationMinutes + addonsDuration
+  }, [currentService, currentSelectedAddons, packageRate.durationMinutes])
 
   const handleReserveClick = () => {
     if (!currentService || !currentCategory || !currentZone) return
@@ -199,7 +195,7 @@ export function PricingCalculator({
                     >
                       <div className="leading-snug">{cat.label}</div>
                       <div className="text-[10px] font-normal text-brand-neon/80 mt-0.5">
-                        {vehicleCategorySizeHint(cat.label)}
+                        {vehicleCategorySizeHint(cat.label, cat.size_key)}
                       </div>
                     </button>
                   )
@@ -226,17 +222,18 @@ export function PricingCalculator({
                 title="Core Service Package"
                 ariaLabel="Core service package"
                 options={activeServices.map(svc => {
+                  const sizeRate = getPackageSizeRate(svc, currentCategory || undefined)
                   const isDisc = hasActiveDiscount(svc.discount_percentage, svc.discount_active)
                   const effBase = isDisc
-                    ? calculateDiscountedBasePrice(svc.base_price, svc.discount_percentage, true)
-                    : svc.base_price
+                    ? calculateDiscountedBasePrice(sizeRate.price, svc.discount_percentage, true)
+                    : sizeRate.price
 
                   return {
                     value: svc.id,
                     label: `${svc.name} — ${formatCurrency(effBase)}`,
                     description: isDisc
-                      ? `${svc.discount_percentage}% off (was ${formatCurrency(svc.base_price)}) · ~${svc.duration_minutes} min`
-                      : `Base price · ~${svc.duration_minutes} min`,
+                      ? `${svc.discount_percentage}% off (was ${formatCurrency(sizeRate.price)}) · ~${sizeRate.durationMinutes} min`
+                      : `~${sizeRate.durationMinutes} min for ${currentCategory?.label || 'selected size'}`,
                   }
                 })}
               />
@@ -248,10 +245,10 @@ export function PricingCalculator({
                   </span>
                   <div>
                     <span className="line-through text-slate-500 mr-2">
-                      {formatCurrency(currentService?.base_price || 0)}
+                      {formatCurrency(packageRate.price)}
                     </span>
                     <span className="font-bold text-white">
-                      {formatCurrency(discountedBasePrice)} Base
+                      {formatCurrency(discountedBasePrice)} Package
                     </span>
                   </div>
                 </div>
@@ -331,7 +328,7 @@ export function PricingCalculator({
                 <p className="mt-2 text-[11px] text-amber-300/90">{OUT_OF_SERVICE_AREA_MESSAGE}</p>
               ) : (
                 <p className="mt-2 text-[11px] text-slate-500">
-                  Enter a 5-digit ZIP to lock travel fee and transit time. Zone cannot be chosen manually.
+                  Enter a 5-digit ZIP to lock travel fee. Zone cannot be chosen manually.
                 </p>
               )}
             </div>
@@ -365,8 +362,7 @@ export function PricingCalculator({
                   {currentZone?.zone_name || 'Enter ZIP to assign travel zone'}
                 </span>
                 <span className="text-[11px] text-brand-neon/80 block mt-1">
-                  Estimated Slot Window: ~{formatDurationMinutes(totalDuration)}
-                  {currentZone?.travel_time_minutes ? ` (incl. ${currentZone.travel_time_minutes}m travel buffer)` : ''}
+                  Estimated duration: ~{formatDurationMinutes(totalDuration)}
                 </span>
               </div>
 
@@ -375,7 +371,7 @@ export function PricingCalculator({
                 <div className="flex justify-between">
                   <span className="text-slate-400 truncate max-w-[140px]">{currentService?.name} ({currentCategory?.label}):</span>
                   <span className="font-semibold text-white">
-                    {formatCurrency(Math.round(discountedBasePrice * (currentCategory?.multiplier || 1) * 100) / 100)}
+                    {formatCurrency(discountedBasePrice)}
                   </span>
                 </div>
                 {currentSelectedAddons.length > 0 && (

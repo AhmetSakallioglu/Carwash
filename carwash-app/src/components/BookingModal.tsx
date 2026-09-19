@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { X, Calendar, CheckCircle2, AlertCircle, Loader2, CheckCheck, MapPin, Tag } from 'lucide-react'
 import { DatePickerCalendar, toISODate } from './DatePickerCalendar'
 import { vehicleCategorySizeHint } from '@/lib/settings'
+import { getPackageSizeRate } from '@/lib/catalog'
 
 interface BookingModalProps {
   isOpen: boolean
@@ -55,37 +56,39 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
   }, [street, zipOrCity, locationZones])
 
   const liveTravelFee = detectedZone?.travel_fee || 0
-  const travelMinutes = detectedZone?.travel_time_minutes || 0
+
+  const packageRate = useMemo(() => {
+    if (!configuration) return { price: 0, durationMinutes: 60 }
+    return getPackageSizeRate(configuration.selectedService, configuration.selectedCategory)
+  }, [configuration])
 
   const liveTotalPrice = useMemo(() => {
     if (!configuration) return 0
     return calculateBookingPrice(
-      configuration.selectedService.base_price,
-      configuration.selectedCategory.multiplier,
+      packageRate.price,
       configuration.selectedAddons.map(addon => addon.price),
       liveTravelFee,
       configuration.selectedService.discount_percentage,
       configuration.selectedService.discount_active
     )
-  }, [configuration, liveTravelFee])
+  }, [configuration, liveTravelFee, packageRate.price])
 
   const liveOriginalTotal = useMemo(() => {
     if (!configuration) return 0
     return calculateBookingPrice(
-      configuration.selectedService.base_price,
-      configuration.selectedCategory.multiplier,
+      packageRate.price,
       configuration.selectedAddons.map(addon => addon.price),
       liveTravelFee,
       0,
       false
     )
-  }, [configuration, liveTravelFee])
+  }, [configuration, liveTravelFee, packageRate.price])
 
   const liveDiscountSavings = Math.max(0, liveOriginalTotal - liveTotalPrice)
 
   // Fetch available slots from backend engine with travel time buffer
   const fetchAvailableSlots = useCallback(
-    async (date: string, serviceId?: string, addonIds?: string[], zip?: string) => {
+    async (date: string, serviceId?: string, addonIds?: string[], zip?: string, vehicleCategoryId?: string) => {
       if (!date || !zip) return
       setIsLoadingSlots(true)
       setSlotsMessage('')
@@ -94,7 +97,7 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
       try {
         const addonQuery = (addonIds || []).join(',')
         const res = await fetch(
-          `/api/slots?date=${date}&serviceId=${serviceId || ''}&addonIds=${addonQuery}&zip=${encodeURIComponent(zip)}`
+          `/api/slots?date=${date}&serviceId=${serviceId || ''}&vehicleCategoryId=${vehicleCategoryId || ''}&addonIds=${addonQuery}&zip=${encodeURIComponent(zip)}`
         )
         const data: SlotsApiResponse = await res.json()
 
@@ -139,7 +142,8 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
         selectedDate,
         configuration.selectedService.id,
         addonIds,
-        zipOrCity.trim()
+        zipOrCity.trim(),
+        configuration.selectedCategory.id
       )
     } else if (isOpen) {
       setSlots([])
@@ -223,7 +227,7 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(45000),
       })
 
       let data: BookingResponse
@@ -265,14 +269,13 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
     configuration.selectedService.discount_percentage,
     configuration.selectedService.discount_active
   )
-  const serviceDuration = configuration.selectedService.duration_minutes
+  const serviceDuration = packageRate.durationMinutes
   const addonsDuration = configuration.selectedAddons.reduce((acc, a) => acc + a.duration_minutes, 0)
   const confirmationZone = confirmedAppointment?.location_zone || detectedZone
   const confirmationTravelFee = confirmedAppointment?.travel_fee ?? liveTravelFee
-  const confirmationTravelMinutes = confirmedAppointment?.travel_time_minutes ?? travelMinutes
   const confirmationTotal = confirmedAppointment?.total_price ?? liveTotalPrice
   const confirmationAddress = confirmedAppointment?.customer_address || composeServiceAddress(street, zipOrCity)
-  const reservedDuration = serviceDuration + addonsDuration + confirmationTravelMinutes
+  const visibleDuration = serviceDuration + addonsDuration
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-in fade-in duration-200">
@@ -315,7 +318,7 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
               <div className="flex justify-between gap-3">
                 <span className="text-slate-500 shrink-0">Service:</span>
                 <span className="font-semibold text-white text-right break-words">
-                  {configuration.selectedService.name} ({configuration.selectedCategory.label} · {vehicleCategorySizeHint(configuration.selectedCategory.label)})
+                  {configuration.selectedService.name} ({configuration.selectedCategory.label} · {vehicleCategorySizeHint(configuration.selectedCategory.label, configuration.selectedCategory.size_key)})
                 </span>
               </div>
 
@@ -349,13 +352,12 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
               </div>
 
               <div className="flex justify-between gap-3">
-                <span className="text-slate-500 shrink-0">Reserved Slot Block:</span>
+                <span className="text-slate-500 shrink-0">Service Duration:</span>
                 <span className="text-white text-right">
-                  {formatDurationMinutes(reservedDuration)}
+                  {formatDurationMinutes(visibleDuration)}
                   <span className="text-slate-500 block">
-                    {formatDurationMinutes(serviceDuration)} service
+                    {formatDurationMinutes(serviceDuration)} package
                     {addonsDuration > 0 ? ` + ${formatDurationMinutes(addonsDuration)} add-ons` : ''}
-                    {confirmationTravelMinutes > 0 ? ` + ${confirmationTravelMinutes}m travel buffer` : ''}
                   </span>
                 </span>
               </div>
@@ -415,7 +417,7 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
                 <span className="font-bold text-white break-words">
                   {configuration.selectedService.name}{' '}
                   <span className="text-slate-400 font-normal">
-                    ({configuration.selectedCategory.label} · {vehicleCategorySizeHint(configuration.selectedCategory.label)})
+                    ({configuration.selectedCategory.label} · {vehicleCategorySizeHint(configuration.selectedCategory.label, configuration.selectedCategory.size_key)})
                   </span>
                 </span>
                 <div className="text-[11px] text-slate-300 mt-1 flex items-center gap-1">
@@ -445,7 +447,7 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
                   {formatCurrency(liveTotalPrice)}
                 </span>
                 <span className="text-[10px] text-slate-500 block">
-                  Slot {formatDurationMinutes(serviceDuration + addonsDuration + travelMinutes)}
+                  {formatDurationMinutes(serviceDuration + addonsDuration)}
                 </span>
               </div>
             </div>
@@ -532,8 +534,8 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
                   <p className="mt-1.5 text-[11px] text-brand-neon">
                     Auto-assigned {detectedZone.zone_name} —{' '}
                     {detectedZone.travel_fee > 0
-                      ? `+${formatCurrency(detectedZone.travel_fee)} travel fee, ${detectedZone.travel_time_minutes}m transit`
-                      : `$0 travel fee, ${detectedZone.travel_time_minutes}m transit`}
+                      ? `+${formatCurrency(detectedZone.travel_fee)} travel fee`
+                      : '$0 travel fee'}
                   </p>
                 ) : zipOrCity.trim() ? (
                   <p className="mt-1.5 text-[11px] text-amber-300/90">{OUT_OF_SERVICE_AREA_MESSAGE}</p>
@@ -558,8 +560,7 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
               <div>
                 <label className="block font-semibold text-slate-300 mb-2 flex items-center justify-between">
                   <span>
-                    Available Slot
-                    {detectedZone ? ` (Includes ${detectedZone.travel_time_minutes}m travel buffer)` : ''} *
+                    Available Slot *
                   </span>
                   {isLoadingSlots && <Loader2 className="w-3 h-3 animate-spin text-brand-cyan" />}
                 </label>
@@ -570,7 +571,7 @@ export function BookingModal({ isOpen, onClose, configuration, locationZones }: 
                   </div>
                 ) : isLoadingSlots ? (
                   <div className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-400 text-xs flex items-center gap-2">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking slot availability with transit buffer...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking available times...
                   </div>
                 ) : slots.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

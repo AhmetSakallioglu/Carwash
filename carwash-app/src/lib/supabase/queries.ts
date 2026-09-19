@@ -11,6 +11,7 @@ import {
   MOCK_APPOINTMENTS,
 } from './mock-data'
 import { normalizeBusinessSettings, HOMEPAGE_BEFORE_AFTER_CATEGORY, businessSettingsHasBeforeAfterColumns, overlayBeforeAfterSettings } from '@/lib/settings'
+import { hydrateService, hydrateVehicleCategory } from '@/lib/catalog'
 import {
   Service,
   VehicleCategory,
@@ -60,7 +61,7 @@ export async function getServices(): Promise<Service[]> {
         console.warn('[getServices] Supabase error:', error.message)
         return MOCK_SERVICES
       }
-      return (data || []) as unknown as Service[]
+      return (data || []).map(row => hydrateService(row as unknown as Service))
     })(),
     4000,
     MOCK_SERVICES
@@ -82,7 +83,7 @@ export async function getVehicleCategories(): Promise<VehicleCategory[]> {
         console.warn('[getVehicleCategories] Supabase error:', error.message)
         return MOCK_VEHICLE_CATEGORIES
       }
-      return (data || []) as unknown as VehicleCategory[]
+      return (data || []).map(row => hydrateVehicleCategory(row as unknown as VehicleCategory))
     })(),
     4000,
     MOCK_VEHICLE_CATEGORIES
@@ -226,12 +227,12 @@ export async function getBlackoutDates(): Promise<BlackoutDate[]> {
 
       if (error) {
         console.warn('[getBlackoutDates] Supabase error:', error.message)
-        return MOCK_BLACKOUTS
+        return []
       }
       return (data || []) as unknown as BlackoutDate[]
     })(),
-    4000,
-    MOCK_BLACKOUTS
+    8000,
+    []
   )
 }
 

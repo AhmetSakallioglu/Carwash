@@ -87,7 +87,7 @@ export async function sendBookingConfirmedSMS(
       ? ` (includes ${formatCurrency(travelFeeAmount)} travel fee)`
       : ' (no travel fee)'
   const durationInfo = context.totalDurationMinutes
-    ? ` Window: ${formatDurationMinutes(context.totalDurationMinutes)}${context.travelTimeMinutes ? ` including ${context.travelTimeMinutes}m travel` : ''}.`
+    ? ` Duration: ${formatDurationMinutes(context.totalDurationMinutes)}.`
     : ''
   const savingsInfo =
     context.discountSavings && context.discountSavings > 0

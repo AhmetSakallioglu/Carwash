@@ -4,6 +4,14 @@ import React, { useState } from 'react'
 import { Service } from '@/types'
 import { formatCurrency, calculateDiscountedBasePrice } from '@/lib/utils'
 import { saveServiceAction, deleteServiceAction } from '@/app/actions/admin'
+import {
+  VEHICLE_SIZES,
+  applyMatrixToService,
+  emptyPricingMatrix,
+  getServicePricingMatrix,
+  getStartingPackageRate,
+  normalizePricingMatrix,
+} from '@/lib/catalog'
 import { Plus, Edit2, Trash2, Check, X, Loader2, Tag, Percent } from 'lucide-react'
 
 interface ServicesManagerProps {
@@ -20,26 +28,29 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleOpenNew = () => {
-    setCurrentService({
-      name: '',
-      slug: '',
-      description: '',
-      features: [],
-      base_price: 99,
-      duration_minutes: 60,
-      discount_percentage: 0,
-      discount_active: false,
-      is_featured: false,
-      is_active: true,
-      sort_order: services.length + 1,
-    })
+    setCurrentService(
+      applyMatrixToService(
+        {
+          name: '',
+          slug: '',
+          description: '',
+          features: [],
+          discount_percentage: 0,
+          discount_active: false,
+          is_featured: false,
+          is_active: true,
+          sort_order: services.length + 1,
+        },
+        emptyPricingMatrix()
+      )
+    )
     setFeaturesInput('')
     setErrorMessage(null)
     setIsEditing(true)
   }
 
   const handleOpenEdit = (service: Service) => {
-    setCurrentService(service)
+    setCurrentService(applyMatrixToService(service, getServicePricingMatrix(service)))
     setFeaturesInput((service.features || []).join('\n'))
     setErrorMessage(null)
     setIsEditing(true)
@@ -102,12 +113,26 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
       .map(f => f.trim())
       .filter(Boolean)
 
-    const payload = {
-      ...currentService,
-      features: featuresArray,
-      discount_percentage: Math.min(100, Math.max(0, Number(currentService.discount_percentage) || 0)),
-      discount_active: Boolean(currentService.discount_active),
+    const matrix = normalizePricingMatrix(currentService.pricing_matrix)
+    const invalidCell = VEHICLE_SIZES.find(size => {
+      const rate = matrix[size.key]
+      return !Number.isFinite(rate.price) || rate.price < 0 || !Number.isFinite(rate.durationMinutes) || rate.durationMinutes < 1
+    })
+    if (invalidCell) {
+      setIsLoading(false)
+      setErrorMessage(`Enter a price and duration for ${invalidCell.label}, for example $129 and 75 minutes`)
+      return
     }
+
+    const payload = applyMatrixToService(
+      {
+        ...currentService,
+        features: featuresArray,
+        discount_percentage: Math.min(100, Math.max(0, Number(currentService.discount_percentage) || 0)),
+        discount_active: Boolean(currentService.discount_active),
+      },
+      matrix
+    )
 
     try {
       const isNew = !currentService.id
@@ -148,9 +173,11 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
     }
   }
 
+  const currentMatrix = getServicePricingMatrix(currentService)
+  const previewStartingRate = getStartingPackageRate(currentService)
   const previewEffectiveBase = currentService
     ? calculateDiscountedBasePrice(
-        Number(currentService.base_price) || 0,
+        previewStartingRate.price,
         Number(currentService.discount_percentage) || 0,
         Boolean(currentService.discount_active)
       )
@@ -162,7 +189,7 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
         <div className="min-w-0">
           <h3 className="font-display text-xl font-bold text-white">Service Packages & Dynamic Discounts</h3>
           <p className="text-xs text-slate-400">
-            Define base prices, durations, promotional discounts, and packages for the Austin booking calculator.
+            Set an independent price and duration for every vehicle size. New packages can be added anytime.
           </p>
         </div>
         <button
@@ -178,9 +205,10 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
       <div className="grid md:grid-cols-2 gap-4">
         {services.map(s => {
           const hasDiscount = Boolean(s.discount_active && s.discount_percentage > 0)
+          const startingRate = getStartingPackageRate(s)
           const discountedPrice = hasDiscount
-            ? calculateDiscountedBasePrice(s.base_price, s.discount_percentage, true)
-            : s.base_price
+            ? calculateDiscountedBasePrice(startingRate.price, s.discount_percentage, true)
+            : startingRate.price
 
           return (
             <div
@@ -252,16 +280,16 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
                           {formatCurrency(discountedPrice)}
                         </span>
                         <span className="line-through text-slate-500 text-xs">
-                          {formatCurrency(s.base_price)}
+                          {formatCurrency(startingRate.price)}
                         </span>
-                        <span className="text-slate-400 text-[11px]">~{s.duration_minutes} mins</span>
+                        <span className="text-slate-400 text-[11px]">from ~{startingRate.durationMinutes} mins</span>
                       </div>
                     ) : (
                       <div>
                         <span className="font-display text-lg font-bold text-white">
-                          {formatCurrency(s.base_price)}
+                          {formatCurrency(startingRate.price)}
                         </span>
-                        <span className="text-slate-500 ml-2">~{s.duration_minutes} mins</span>
+                        <span className="text-slate-500 ml-2">from ~{startingRate.durationMinutes} mins</span>
                       </div>
                     )}
                   </div>
@@ -351,46 +379,72 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Full Complete Reset (In & Out)"
+                  placeholder="e.g. Full Detail"
                   value={currentService.name || ''}
                   onChange={e => setCurrentService({ ...currentService, name: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Base Price ($) *</label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    required
-                    value={currentService.base_price ?? 99}
-                    onChange={e =>
-                      setCurrentService({ ...currentService, base_price: Number(e.target.value) })
-                    }
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan"
-                  />
+                  <label className="block font-semibold text-white mb-1">Price & Duration Matrix *</label>
+                  <p className="text-[10px] text-slate-500">
+                    Each vehicle size has its own price and minutes. No multipliers.
+                  </p>
                 </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Duration (Minutes) *
-                  </label>
-                  <input
-                    type="number"
-                    step="15"
-                    min="15"
-                    required
-                    value={currentService.duration_minutes ?? 60}
-                    onChange={e =>
-                      setCurrentService({
-                        ...currentService,
-                        duration_minutes: Number(e.target.value),
-                      })
-                    }
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan"
-                  />
+                <div className="space-y-2.5">
+                  {VEHICLE_SIZES.map(size => {
+                    const rate = currentMatrix[size.key]
+                    return (
+                      <div key={size.key} className="grid grid-cols-[1fr_88px_88px] gap-2 items-end">
+                        <div>
+                          <p className="text-[11px] font-semibold text-slate-200">{size.label}</p>
+                          <p className="text-[10px] text-slate-500">{size.hint}</p>
+                        </div>
+                        <label className="block">
+                          <span className="block text-[10px] text-slate-400 mb-1">Price ($)</span>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            required
+                            value={rate.price}
+                            onChange={e => {
+                              const next = normalizePricingMatrix(currentMatrix)
+                              next[size.key] = {
+                                ...next[size.key],
+                                price: e.target.value === '' ? 0 : Number(e.target.value),
+                              }
+                              setCurrentService(applyMatrixToService(currentService, next))
+                            }}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-brand-cyan"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="block text-[10px] text-slate-400 mb-1">Minutes</span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            step="1"
+                            min="1"
+                            required
+                            value={rate.durationMinutes}
+                            onChange={e => {
+                              const next = normalizePricingMatrix(currentMatrix)
+                              next[size.key] = {
+                                ...next[size.key],
+                                durationMinutes: e.target.value === '' ? 0 : Number(e.target.value),
+                              }
+                              setCurrentService(applyMatrixToService(currentService, next))
+                            }}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-brand-cyan"
+                          />
+                        </label>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -441,14 +495,14 @@ export function ServicesManager({ initialServices }: ServicesManagerProps) {
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px]">
-                    <span className="text-slate-400 block">Effective Base Rate:</span>
+                    <span className="text-slate-400 block">Starting package rate:</span>
                     <div className="flex items-baseline gap-1.5 mt-0.5">
                       <span className="font-bold text-brand-neon text-sm">
                         {formatCurrency(previewEffectiveBase)}
                       </span>
                       {Boolean(currentService.discount_active && (currentService.discount_percentage || 0) > 0) && (
                         <span className="line-through text-slate-500 text-[10px]">
-                          {formatCurrency(Number(currentService.base_price) || 0)}
+                          {formatCurrency(previewStartingRate.price)}
                         </span>
                       )}
                     </div>

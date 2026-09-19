@@ -17,9 +17,12 @@ import {
   OUT_OF_SERVICE_AREA_MESSAGE,
 } from '@/lib/utils'
 import { sendBookingConfirmedSMS } from '@/lib/twilio'
-import { createCalendarEvent } from '@/lib/calendar'
-import { BookingSubmissionPayload, SelectedAddon, Appointment, LocationZone } from '@/types'
+import { createCalendarEvent, isRealGoogleEventId } from '@/lib/calendar'
+import { BookingSubmissionPayload, SelectedAddon, Appointment, LocationZone, Service, VehicleCategory } from '@/types'
 import { getBusinessSettings } from '@/lib/supabase/queries'
+import { getPackageSizeRate, hydrateService, hydrateVehicleCategory } from '@/lib/catalog'
+
+export const maxDuration = 60
 
 async function loadActiveLocationZones(isLiveDb: boolean): Promise<LocationZone[]> {
   if (!isLiveDb) return MOCK_LOCATION_ZONES.filter(zone => zone.is_active)
@@ -104,12 +107,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Server-authoritative zone: ignore client-supplied zone_id / travel_fee
-    let serviceName = 'Full Auto Detail'
-    let serviceBasePrice = 199
-    let serviceDuration = 60
+    let serviceName = 'Full Detail'
+    let serviceBasePrice = 249
+    let serviceDuration = 150
     let serviceDiscountPercentage = 0
     let serviceDiscountActive = false
-    let vehicleMultiplier = 1.0
     let vehicleLabel = 'Sedan / Coupe'
     let locationZoneName = matchedZone.zone_name
     let locationTravelFee = Number(matchedZone.travel_fee || 0)
@@ -129,24 +131,21 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (service) {
-        serviceName = service.name
-        serviceBasePrice = Number(service.base_price)
-        serviceDuration = service.duration_minutes
-        serviceDiscountPercentage = Number(service.discount_percentage || 0)
-        serviceDiscountActive = Boolean(service.discount_active)
+        const categoryRow = (
+          await supabase.from('vehicle_categories').select('*').eq('id', body.vehicle_category_id).single()
+        ).data
+        const hydratedService = hydrateService(service as unknown as Service)
+        const hydratedCategory = hydrateVehicleCategory(
+          (categoryRow || { id: body.vehicle_category_id }) as unknown as VehicleCategory
+        )
+        const sizeRate = getPackageSizeRate(hydratedService, hydratedCategory)
+        serviceName = hydratedService.name
+        serviceBasePrice = sizeRate.price
+        serviceDuration = sizeRate.durationMinutes
+        serviceDiscountPercentage = Number(hydratedService.discount_percentage || 0)
+        serviceDiscountActive = Boolean(hydratedService.discount_active)
+        vehicleLabel = hydratedCategory.label
         totalDuration = serviceDuration
-      }
-
-      // Fetch Vehicle Category
-      const { data: category } = await supabase
-        .from('vehicle_categories')
-        .select('*')
-        .eq('id', body.vehicle_category_id)
-        .single()
-
-      if (category) {
-        vehicleMultiplier = Number(category.multiplier)
-        vehicleLabel = category.label
       }
 
       // Fetch Addons
@@ -170,17 +169,19 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Mock Data lookup
-      const service = MOCK_SERVICES.find(s => s.id === body.service_id) || MOCK_SERVICES[0]
+      const service = hydrateService(MOCK_SERVICES.find(s => s.id === body.service_id) || MOCK_SERVICES[0])
+      const category =
+        hydrateVehicleCategory(
+          MOCK_VEHICLE_CATEGORIES.find(c => c.id === body.vehicle_category_id) || MOCK_VEHICLE_CATEGORIES[0]
+        )
+      const sizeRate = getPackageSizeRate(service, category)
       serviceName = service.name
-      serviceBasePrice = service.base_price
-      serviceDuration = service.duration_minutes
+      serviceBasePrice = sizeRate.price
+      serviceDuration = sizeRate.durationMinutes
       serviceDiscountPercentage = service.discount_percentage || 0
       serviceDiscountActive = service.discount_active || false
-      totalDuration = serviceDuration
-
-      const category = MOCK_VEHICLE_CATEGORIES.find(c => c.id === body.vehicle_category_id) || MOCK_VEHICLE_CATEGORIES[0]
-      vehicleMultiplier = category.multiplier
       vehicleLabel = category.label
+      totalDuration = serviceDuration
 
       if (body.selected_addon_ids && body.selected_addon_ids.length > 0) {
         const addons = MOCK_ADDONS.filter(a => body.selected_addon_ids.includes(a.id))
@@ -203,7 +204,6 @@ export async function POST(request: NextRequest) {
     const addonPrices = selectedAddonsData.map(a => a.price)
     const totalPrice = calculateBookingPrice(
       serviceBasePrice,
-      vehicleMultiplier,
       addonPrices,
       locationTravelFee,
       serviceDiscountPercentage,
@@ -211,7 +211,6 @@ export async function POST(request: NextRequest) {
     )
     const originalPrice = calculateBookingPrice(
       serviceBasePrice,
-      vehicleMultiplier,
       addonPrices,
       locationTravelFee,
       0,
@@ -337,35 +336,37 @@ export async function POST(request: NextRequest) {
 
     const formattedDateTime = formatDateTimeCT(createdAppointment.start_time)
     const addonsSummary = selectedAddonsData.map(a => a.name).join(', ')
+    const calendarPayload = {
+      appointment: createdAppointment,
+      serviceName,
+      vehicleLabel,
+      addonsSummary,
+      zipCode: body.zip_code,
+    }
 
-    // Twilio SMS + Google Calendar run after the HTTP response so the client is not blocked.
     after(async () => {
-      const settings = await getBusinessSettings()
-      const [calendarResult, smsResult] = await Promise.allSettled([
-        (async () => {
-          const gcalEventId = await createCalendarEvent({
-            appointment: createdAppointment,
-            serviceName,
-            vehicleLabel,
-            addonsSummary,
-            zipCode: body.zip_code,
-          })
-
-          if (gcalEventId && isLiveDb && createdAppointment.id) {
-            try {
-              const supabase = createAdminClient()
-              await supabase
-                .from('appointments')
-                .update({ google_event_id: gcalEventId } as never)
-                .eq('id', createdAppointment.id)
-            } catch (persistErr) {
-              console.error('[Google Calendar ID persist Non-fatal Error]:', persistErr)
+      try {
+        const gcalEventId = await createCalendarEvent(calendarPayload)
+        if (isRealGoogleEventId(gcalEventId)) {
+          createdAppointment.google_event_id = gcalEventId
+          if (isLiveDb && createdAppointment.id && !createdAppointment.id.startsWith('mock_apt_')) {
+            const supabase = createAdminClient()
+            const { error: persistError } = await supabase
+              .from('appointments')
+              .update({ google_event_id: gcalEventId } as never)
+              .eq('id', createdAppointment.id)
+            if (persistError) {
+              console.error('[Google Calendar ID persist Error]:', persistError.message)
             }
           }
+        }
+      } catch (calendarErr) {
+        console.error('[Google Calendar Non-fatal Error]:', calendarErr)
+      }
 
-          return gcalEventId
-        })(),
-        sendBookingConfirmedSMS({
+      try {
+        const settings = await getBusinessSettings()
+        await sendBookingConfirmedSMS({
           customerName: createdAppointment.customer_name,
           customerPhone: createdAppointment.customer_phone,
           appointmentCode: createdAppointment.appointment_code,
@@ -375,19 +376,13 @@ export async function POST(request: NextRequest) {
           totalPrice: createdAppointment.total_price,
           zoneName: locationZoneName,
           travelFee: locationTravelFee,
-          travelTimeMinutes: locationTravelTimeMinutes,
-          totalDurationMinutes: totalDuration,
+          totalDurationMinutes: serviceDuration + selectedAddonsData.reduce((acc, a) => acc + a.duration_minutes, 0),
           discountSavings,
           businessName: settings.business_name,
           businessPhone: settings.phone,
-        }),
-      ])
-
-      if (calendarResult.status === 'rejected') {
-        console.error('[Google Calendar Non-fatal Error]:', calendarResult.reason)
-      }
-      if (smsResult.status === 'rejected') {
-        console.error('[Twilio Non-fatal Error]:', smsResult.reason)
+        })
+      } catch (smsErr) {
+        console.error('[Twilio Non-fatal Error]:', smsErr)
       }
     })
 

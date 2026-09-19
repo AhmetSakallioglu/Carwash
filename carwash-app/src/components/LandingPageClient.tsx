@@ -23,6 +23,7 @@ import { AustinServiceArea, Footer } from './Footer'
 import { BackgroundOrbs } from './BackgroundOrbs'
 import { ScrollProgressBar } from './ScrollProgressBar'
 import { calculateBookingPrice } from '@/lib/utils'
+import { getPackageSizeRate } from '@/lib/catalog'
 
 interface LandingPageClientProps {
   services: Service[]
@@ -84,27 +85,20 @@ export function LandingPageClient({
 
     if (activeService && activeCategory) {
       const addonPrices = activeAddons.map(a => a.price)
+      const packageRate = getPackageSizeRate(activeService, activeCategory)
 
       const totalPrice = calculateBookingPrice(
-        activeService.base_price,
-        activeCategory.multiplier,
+        packageRate.price,
         addonPrices,
         0,
         activeService.discount_percentage,
         activeService.discount_active
       )
 
-      const originalTotal = calculateBookingPrice(
-        activeService.base_price,
-        activeCategory.multiplier,
-        addonPrices,
-        0,
-        0,
-        false
-      )
+      const originalTotal = calculateBookingPrice(packageRate.price, addonPrices, 0, 0, false)
 
       const totalDuration =
-        activeService.duration_minutes +
+        packageRate.durationMinutes +
         activeAddons.reduce((acc, a) => acc + a.duration_minutes, 0)
 
       setModalConfig({
@@ -130,7 +124,13 @@ export function LandingPageClient({
 
       <main>
         <Hero settings={settings} googleRating={googleReviews.rating} />
-        <ServicesSection services={services} onSelectService={handleSelectServiceFromCard} />
+        <ServicesSection
+          services={services}
+          categories={categories}
+          selectedCategory={categories.find(c => c.id === selectedCategoryId) || categories[0] || null}
+          onSelectCategoryId={setSelectedCategoryId}
+          onSelectService={handleSelectServiceFromCard}
+        />
         {settings.show_before_after && (
           <BeforeAfterSlider
             beforeImageUrl={settings.before_after_before_image_url}

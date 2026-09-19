@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.services (
     features JSONB NOT NULL DEFAULT '[]'::jsonb,
     base_price NUMERIC(10, 2) NOT NULL CHECK (base_price >= 0),
     duration_minutes INTEGER NOT NULL DEFAULT 60 CHECK (duration_minutes > 0),
+    pricing_matrix JSONB NOT NULL DEFAULT '{}'::jsonb,
     discount_percentage NUMERIC(5, 2) NOT NULL DEFAULT 0 CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
     discount_active BOOLEAN NOT NULL DEFAULT false,
     is_featured BOOLEAN NOT NULL DEFAULT false,
@@ -25,11 +26,11 @@ CREATE TABLE IF NOT EXISTS public.services (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 2. Vehicle Categories Table (Sedan, SUV, Truck multiplier)
+-- 2. Vehicle Sizes Table (independent package × size pricing matrix)
 CREATE TABLE IF NOT EXISTS public.vehicle_categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     label TEXT NOT NULL,
-    multiplier NUMERIC(4, 2) NOT NULL DEFAULT 1.0 CHECK (multiplier > 0),
+    size_key TEXT NOT NULL DEFAULT 'sedan',
     is_active BOOLEAN NOT NULL DEFAULT true,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())

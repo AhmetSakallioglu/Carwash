@@ -37,6 +37,12 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
     e.preventDefault()
     if (!currentAddon) return
 
+    const durationMinutes = Math.round(Number(currentAddon.duration_minutes))
+    if (!Number.isFinite(durationMinutes) || durationMinutes < 0) {
+      setErrorMessage('Enter duration in minutes, for example 20')
+      return
+    }
+
     setIsLoading(true)
     setErrorMessage(null)
 
@@ -45,6 +51,7 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
       const result = await saveAddonAction({
         ...currentAddon,
         name: currentAddon.name || '',
+        duration_minutes: durationMinutes,
       })
 
       if (result.success && result.data) {
@@ -204,20 +211,23 @@ export function AddonsManager({ initialAddons }: AddonsManagerProps) {
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">Duration (Min) *</label>
-                  <input
+                    <input
                     type="number"
-                    step="15"
+                    inputMode="numeric"
+                    step="1"
                     min="0"
                     required
-                    value={currentAddon.duration_minutes ?? 30}
-                    onChange={e =>
+                    value={currentAddon.duration_minutes ?? ''}
+                    onChange={e => {
+                      const raw = e.target.value
                       setCurrentAddon({
                         ...currentAddon,
-                        duration_minutes: Number(e.target.value),
+                        duration_minutes: raw === '' ? undefined : Number(raw),
                       })
-                    }
+                    }}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-cyan"
                   />
+                  <p className="text-[10px] text-slate-500 mt-1">Any minutes, e.g. 20.</p>
                 </div>
               </div>
 

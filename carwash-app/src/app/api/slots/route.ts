@@ -7,9 +7,11 @@ import {
   MOCK_SCHEDULES,
   MOCK_BLACKOUTS,
   MOCK_APPOINTMENTS,
+  MOCK_VEHICLE_CATEGORIES,
 } from '@/lib/supabase/mock-data'
 import { matchLocationZone } from '@/lib/utils'
-import { LocationZone, SlotsApiResponse, TimeSlot } from '@/types'
+import { LocationZone, Service, SlotsApiResponse, TimeSlot, VehicleCategory } from '@/types'
+import { getPackageSizeRate, hydrateService, hydrateVehicleCategory } from '@/lib/catalog'
 
 // Helper: parse "HH:mm:ss" or "HH:mm" into minutes from midnight
 function timeToMinutes(t: string): number {
@@ -41,6 +43,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const dateStr = searchParams.get('date') // "2026-09-17"
     const serviceId = searchParams.get('serviceId')
+    const vehicleCategoryId = searchParams.get('vehicleCategoryId') || searchParams.get('categoryId') || ''
     const zipCode = searchParams.get('zip') || searchParams.get('zipCode') || ''
     const addonIdsParam = searchParams.get('addonIds') || ''
     const addonIds = addonIdsParam ? addonIdsParam.split(',').filter(Boolean) : []
@@ -104,19 +107,22 @@ export async function GET(request: NextRequest) {
           slotInterval = settingsData.slot_interval_minutes
         }
 
-        // 3. Fetch Service Duration
+        // 3. Fetch package duration for the selected vehicle size
         if (serviceId) {
-          const { data: serviceData } = await supabase
-            .from('services')
-            .select('duration_minutes')
-            .eq('id', serviceId)
-            .single()
+          const { data: serviceData } = await supabase.from('services').select('*').eq('id', serviceId).single()
+          const { data: categoryData } = vehicleCategoryId
+            ? await supabase.from('vehicle_categories').select('*').eq('id', vehicleCategoryId).single()
+            : { data: null }
 
-          if (serviceData?.duration_minutes) {
-            totalDuration = serviceData.duration_minutes
-          } else {
-            const svc = MOCK_SERVICES.find(s => s.id === serviceId)
-            if (svc) totalDuration = svc.duration_minutes
+          const service = serviceData
+            ? hydrateService(serviceData as unknown as Service)
+            : MOCK_SERVICES.find(s => s.id === serviceId)
+          const category = categoryData
+            ? hydrateVehicleCategory(categoryData as unknown as VehicleCategory)
+            : MOCK_VEHICLE_CATEGORIES.find(c => c.id === vehicleCategoryId) || MOCK_VEHICLE_CATEGORIES[0]
+
+          if (service) {
+            totalDuration = getPackageSizeRate(service, category).durationMinutes
           }
         }
 
@@ -203,8 +209,9 @@ export async function GET(request: NextRequest) {
       }
 
       const service = MOCK_SERVICES.find(s => s.id === serviceId)
+      const category = MOCK_VEHICLE_CATEGORIES.find(c => c.id === vehicleCategoryId) || MOCK_VEHICLE_CATEGORIES[0]
       if (service) {
-        totalDuration = service.duration_minutes
+        totalDuration = getPackageSizeRate(service, category).durationMinutes
       }
 
       const selectedAddons = MOCK_ADDONS.filter(a => addonIds.includes(a.id))
